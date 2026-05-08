@@ -3,12 +3,14 @@ import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, where, up
 import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
 const firebaseConfig = {
-    apiKey: "AIzaSyB7W0bvFnDfEUzuwuAIoGCwRakfFiTEt48",
-    authDomain: "savage-store-18507.firebaseapp.com",
-    projectId: "savage-store-18507",
-    storageBucket: "savage-store-18507.firebasestorage.app",
-    messagingSenderId: "521961005705",
-    appId: "1:521961005705:web:216bf71293154e67c29c58"
+  apiKey: "AIzaSyB7W0bvFnDfEUzuwuAIoGCwRakfFiTEt48",
+  authDomain: "savage-store-18507.firebaseapp.com",
+  databaseURL: "https://savage-store-18507-default-rtdb.firebaseio.com",
+  projectId: "savage-store-18507",
+  storageBucket: "savage-store-18507.firebasestorage.app",
+  messagingSenderId: "521961005705",
+  appId: "1:521961005705:web:216bf71293154e67c29c58",
+  measurementId: "G-86K4ZGMZQ4"
 };
 
 const app = initializeApp(firebaseConfig);
@@ -19,7 +21,7 @@ const provider = new GoogleAuthProvider();
 // EMAILJS INITIALIZATION
 emailjs.init("VGMXshIsMZlghPhDW"); 
 
-// CONFIGURATION
+// BUSINESS SETTINGS
 const ADMIN_PHONE = "2347120004769";
 const ADMIN_EMAIL = "Chukwumachidozie18@gmail.com"; 
 const BANK_DETAILS = { bank: "OPAY", account: "7120004769", name: "SAMUEL SEWANU OKESOLA" };
@@ -28,7 +30,7 @@ let activeOrder = null;
 let currencySymbol = "₦";
 let currencyRate = 1;
 
-// 1. LOCATION & CURRENCY DETECTION
+// 1. ADAPTIVE CURRENCY DETECTION
 async function detectCurrency() {
     try {
         const res = await fetch('https://ipapi.co/json/');
@@ -51,7 +53,7 @@ function convert(naira) {
     return currencyRate === 1 ? val.toLocaleString() : val.toFixed(2);
 }
 
-// 2. AUTHENTICATION
+// 2. AUTHENTICATION & INITIALIZATION
 onAuthStateChanged(auth, async (user) => {
     if (user) {
         await detectCurrency();
@@ -72,7 +74,7 @@ function initSavage() {
     document.getElementById('bank-acc-display').innerText = BANK_DETAILS.account;
     document.getElementById('bank-user-display').innerText = BANK_DETAILS.name;
     
-    // Update static diamond prices
+    // Update Resource Hub Prices
     document.getElementById('price-100').innerText = `${currencySymbol}${convert(1200)}`;
     document.getElementById('price-520').innerText = `${currencySymbol}${convert(5600)}`;
     document.getElementById('price-1060').innerText = `${currencySymbol}${convert(11000)}`;
@@ -81,7 +83,7 @@ function initSavage() {
     syncAdminOrders();
 }
 
-// 3. CORE LOGIC
+// 3. TRANSACTION LOGIC
 window.openOrderModal = (item, price) => {
     activeOrder = { item, price };
     document.getElementById('order-summary').innerText = `INVOICE: ${item} | PRICE: ${currencySymbol}${convert(price)}`;
@@ -103,6 +105,7 @@ window.processFinalOrder = async () => {
     closeModal('order-modal');
 };
 
+// 4. ADMIN FULFILLMENT
 function syncAdminOrders() {
     const q = query(collection(db, "orders"), where("status", "==", "PENDING"), orderBy("createdAt", "desc"));
     onSnapshot(q, (snap) => {
@@ -111,9 +114,10 @@ function syncAdminOrders() {
         snap.forEach(orderDoc => {
             const data = orderDoc.data();
             list.innerHTML += `
-                <div class="card" style="border-color: var(--gold)">
-                    <p style="color:var(--gold)">${data.item}</p>
+                <div class="card" style="border-left: 4px solid var(--gold)">
+                    <p style="color:var(--teal); font-weight:bold">${data.item}</p>
                     <p>UID: ${data.uid}</p>
+                    <p style="font-size:0.6rem; color:#888">${data.email}</p>
                     <button class="action-btn" onclick="completeOrder('${orderDoc.id}', '${data.email}', '${data.uid}', '${data.item}', ${data.price})">MARK DONE</button>
                 </div>`;
         });
@@ -127,7 +131,7 @@ window.completeOrder = async (id, email, uid, item, price) => {
             to_name: email, order_item: item, uid: uid,
             price: convert(price), currency_symbol: currencySymbol
         });
-        alert("FULFILLED: Email Dispatched!");
+        alert("FULFILLED: Email Dispatched to " + email);
     } catch (e) { alert("DB Updated, but Email Failed."); }
 };
 
@@ -138,12 +142,16 @@ window.syncMarket = () => {
         grid.innerHTML = "";
         snap.forEach(d => {
             const data = d.data();
-            grid.innerHTML += `<div class="card"><h2 class="neon-text">${currencySymbol}${convert(data.price)}</h2><button class="action-btn" onclick="openOrderModal('ACCOUNT_${d.id.substring(0,4)}', ${data.price})">BUY</button></div>`;
+            grid.innerHTML += `
+                <div class="card">
+                    <h2 class="neon-text">${currencySymbol}${convert(data.price)}</h2>
+                    <button class="action-btn" onclick="openOrderModal('ACCOUNT_${d.id.substring(0,4)}', ${data.price})">BUY_ASSET</button>
+                </div>`;
         });
     });
 };
 
-// HELPERS
+// UTILITIES
 window.signInWithGoogle = () => signInWithPopup(auth, provider);
 window.userLogout = () => signOut(auth);
 window.showSection = (id) => {

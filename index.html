@@ -4,9 +4,7 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Savage Store | Terminal V5</title>
-    
     <link rel="icon" type="image/jpg" href="https://i.ibb.co/N617Fj0N/image-19.jpg">
-    
     <link rel="stylesheet" href="style.css">
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;900&display=swap" rel="stylesheet">
     <script type="text/javascript" src="https://cdn.jsdelivr.net/npm/@emailjs/browser@3/dist/email.min.js"></script>
@@ -16,7 +14,6 @@
     <div id="auth-screen" class="gate-overlay">
         <div class="terminal-box">
             <h2 class="neon-text">SAVAGE_SYSTEM_V5</h2>
-            <p style="font-size: 0.5rem; color: #444; margin-bottom: 25px;">AUTHORIZATION_REQUIRED</p>
             <button class="google-btn" onclick="signInWithGoogle()">AUTHORIZE_ACCESS</button>
         </div>
     </div>
@@ -25,22 +22,43 @@
         <header>
             <div class="nav-container">
                 <div class="brand">
-                    <img src="https://i.ibb.co/N617Fj0N/image-19.jpg" alt="Savage Logo" class="header-logo">
+                    <img src="https://i.ibb.co/N617Fj0N/image-19.jpg" alt="Savage Logo" class="header-logo" onclick="showSection('home')">
                 </div>
                 <nav>
+                    <button onclick="showSection('home')">HOME</button>
                     <button onclick="showSection('market')">MARKET</button>
                     <button onclick="showSection('diamonds')">DIAMONDS</button>
-                    <button id="admin-link" class="hidden" onclick="showSection('admin')" style="border-color: var(--gold); color: var(--gold);">ADMIN_PANEL</button>
+                    <button id="admin-link" class="hidden" onclick="showSection('admin')" style="color: var(--gold);">ADMIN</button>
                     <button onclick="userLogout()" style="color: var(--pink);">LOGOUT</button>
                 </nav>
             </div>
         </header>
 
-        <div class="ticker-wrap">
-            <div class="ticker">SECURE_GATEWAY_ACTIVE... AUTO_EMAIL_DISPATCH_ENABLED... 24HR_FULFILLMENT...</div>
-        </div>
+        <div class="ticker-wrap"><div class="ticker">NEW_ACCOUNTS_UPLOADING... LIVE_CURRENCY_CONVERSION_ACTIVE... SECURE_PAYMENT_GATEWAY...</div></div>
 
-        <main id="section-market" class="app-section">
+        <section id="section-home" class="app-section">
+            <div class="hero-banner">
+                <div class="hero-content">
+                    <h1 class="neon-text">WELCOME_SAVAGE</h1>
+                    <p>PREMIUM GARENA RESOURCES & ELITE ACCOUNTS</p>
+                </div>
+            </div>
+            <div class="sub-header">
+                <h3 class="neon-text">🔥 HOT_DEALS</h3>
+                <button class="view-all" onclick="showSection('diamonds')">VIEW ALL</button>
+            </div>
+            <div class="diamond-grid mini">
+                <div class="d-card best-value" onclick="openOrderModal('520 Gems', 5600)"><h4>520 Gems</h4><p id="home-price-520">Loading...</p></div>
+                <div class="d-card" onclick="openOrderModal('1060 Gems', 11000)"><h4>1060 Gems</h4><p id="home-price-1060">Loading...</p></div>
+            </div>
+            <div class="sub-header">
+                <h3 class="neon-text">🛡️ RECENT_UPLOADS</h3>
+                <button class="view-all" onclick="showSection('market')">BROWSE MARKET</button>
+            </div>
+            <div id="home-recent-grid" class="grid"></div>
+        </section>
+
+        <main id="section-market" class="app-section hidden">
              <div class="section-header"><h2>ACCOUNT_MARKET</h2><button class="action-btn" style="width:auto; padding:10px 20px" onclick="openModal('sell-modal')">+ DEPLOY</button></div>
              <div id="market-grid" class="grid"></div>
         </main>
@@ -48,9 +66,10 @@
         <section id="section-diamonds" class="app-section hidden">
             <div class="section-header"><h2>RESOURCE_HUB</h2></div>
             <div class="diamond-grid">
-                <div class="d-card" onclick="openOrderModal('100 Gems', 1200)"><h4>100 Gems</h4><p id="price-100">Calculating...</p></div>
-                <div class="d-card" onclick="openOrderModal('520 Gems', 5600)"><h4>520 Gems</h4><p id="price-520">Calculating...</p></div>
-                <div class="d-card" onclick="openOrderModal('1060 Gems', 11000)"><h4>1060 Gems</h4><p id="price-1060">Calculating...</p></div>
+                <div class="d-card" onclick="openOrderModal('100 Gems', 1200)"><h4>100 Gems</h4><p id="price-100">...</p></div>
+                <div class="d-card best-value" onclick="openOrderModal('520 Gems', 5600)"><h4>520 Gems</h4><p id="price-520">...</p></div>
+                <div class="d-card" onclick="openOrderModal('1060 Gems', 11000)"><h4>1060 Gems</h4><p id="price-1060">...</p></div>
+                <div class="d-card" onclick="openOrderModal('Weekly Membership', 2500)"><h4>Weekly Pass</h4><p id="price-weekly">...</p></div>
             </div>
         </section>
 
@@ -61,21 +80,18 @@
     </div>
 
     <div id="order-modal" class="modal-overlay hidden">
-        <div class="modal-content payment-terminal">
+        <div class="modal-content">
             <h3 class="neon-text">SECURE_PAYMENT</h3>
             <div class="order-box">
-                <p id="order-summary" style="color: var(--gold); font-size: 0.7rem;"></p>
-                <p class="disclaimer-text">⚠️ DOUBLE CHECK UID. EMAILS SENT AUTOMATICALLY ON COMPLETION.</p>
+                <p id="order-summary" style="color: var(--gold);"></p>
                 <input type="text" id="cust-uid" placeholder="PLAYER_UID">
-                <input type="email" id="cust-email" placeholder="EMAIL_FOR_RECEIPT">
+                <input type="email" id="cust-email" placeholder="RECEIPT_EMAIL">
             </div>
-
             <div class="bank-details">
                 <h4 id="bank-name-display"></h4>
-                <h2 id="bank-acc-display" style="color: var(--neon);"></h2>
-                <p id="bank-user-display" style="font-size: 0.6rem;"></p>
+                <h2 id="bank-acc-display"></h2>
+                <p id="bank-user-display"></p>
             </div>
-            
             <button class="action-btn" onclick="processFinalOrder()">I_HAVE_PAID</button>
             <button onclick="closeModal('order-modal')" class="cancel-link">CANCEL</button>
         </div>
@@ -83,9 +99,9 @@
 
     <div id="sell-modal" class="modal-overlay hidden">
         <div class="modal-content">
-            <h3 class="neon-text">NEW_ASSET</h3>
+            <h3 class="neon-text">DEPLOY_ASSET</h3>
             <input type="number" id="p-price" placeholder="BASE_PRICE_NGN">
-            <button class="action-btn" onclick="uploadAsset()">DEPLOY_TO_MARKET</button>
+            <button class="action-btn" onclick="uploadAsset()">UPLOAD_TO_FIREBASE</button>
             <button onclick="closeModal('sell-modal')" class="cancel-link">CLOSE</button>
         </div>
     </div>

@@ -1,139 +1,101 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-import { getFirestore, collection, addDoc, onSnapshot, query, orderBy, where, updateDoc, doc, limit } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-import { getAuth, GoogleAuthProvider, signInWithPopup, onAuthStateChanged, signOut } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
-
-const firebaseConfig = {
-  apiKey: "AIzaSyB7W0bvFnDfEUzuwuAIoGCwRakfFiTEt48",
-  authDomain: "savage-store-18507.firebaseapp.com",
-  databaseURL: "https://savage-store-18507-default-rtdb.firebaseio.com",
-  projectId: "savage-store-18507",
-  storageBucket: "savage-store-18507.firebasestorage.app",
-  messagingSenderId: "521961005705",
-  appId: "1:521961005705:web:216bf71293154e67c29c58",
-  measurementId: "G-86K4ZGMZQ4"
-};
-
-const app = initializeApp(firebaseConfig);
-const db = getFirestore(app);
-const auth = getAuth(app);
-const provider = new GoogleAuthProvider();
-
-emailjs.init("VGMXshIsMZlghPhDW"); 
+emailjs.init("YOUR_EMAILJS_PUBLIC_KEY");
 
 const ADMIN_PHONE = "2347120004769";
-const ADMIN_EMAIL = "Chukwumachidozie18@gmail.com"; 
-const BANK = { name: "OPAY", acc: "7120004769", user: "SAMUEL SEWANU OKESOLA" };
 
-let activeOrder = null;
-let currencySymbol = "₦";
-let currencyRate = 1;
+let currentOrder = {
+  item: "",
+  price: 0
+};
 
-async function detectCurrency() {
-    try {
-        const res = await fetch('https://ipapi.co/json/');
-        const data = await res.json();
-        const map = { "NG": { s: "₦", r: 1 }, "US": { s: "$", r: 0.00065 }, "GB": { s: "£", r: 0.00052 }, "GH": { s: "GH₵", r: 0.011 } };
-        if (map[data.country_code]) { currencySymbol = map[data.country_code].s; currencyRate = map[data.country_code].r; }
-    } catch (e) { console.log("Detect fail"); }
+
+function scrollToSection(id){
+  document.getElementById(id).scrollIntoView({
+    behavior:"smooth"
+  });
 }
 
-function convert(naira) {
-    const val = naira * currencyRate;
-    return currencyRate === 1 ? val.toLocaleString() : val.toFixed(2);
-}
 
-onAuthStateChanged(auth, async (user) => {
-    if (user) {
-        await detectCurrency();
-        document.getElementById('auth-screen').classList.add('hidden');
-        document.getElementById('main-app').classList.remove('hidden');
-        if(user.email.toLowerCase() === ADMIN_EMAIL.toLowerCase()) document.getElementById('admin-link').classList.remove('hidden');
-        initSavage();
-    } else {
-        document.getElementById('auth-screen').classList.remove('hidden');
-        document.getElementById('main-app').classList.add('hidden');
-    }
+window.scrollToSection = scrollToSection;
+
+
+window.signInWithGoogle = () => {
+  alert("Firebase Google Authentication goes here ⚡");
+};
+
+
+window.openOrderModal = (item,price) => {
+  currentOrder.item = item;
+  currentOrder.price = price;
+
+  document.getElementById("order-summary").innerHTML = `
+    <strong>${item}</strong><br><br>
+    Price: ₦${price.toLocaleString()}
+  `;
+
+  document.getElementById("order-modal").classList.remove("hidden");
+};
+
+
+window.closeModal = () => {
+  document.getElementById("order-modal").classList.add("hidden");
+};
+
+
+window.completeOrder = async () => {
+
+  const uid = document.getElementById("uid").value.trim();
+  const email = document.getElementById("email").value.trim();
+
+  if(!uid || !email){
+    alert("Please fill all fields.");
+    return;
+  }
+
+  const message = `
+SAVAGE STORE ORDER
+
+ITEM: ${currentOrder.item}
+PRICE: ₦${currentOrder.price}
+UID: ${uid}
+EMAIL: ${email}
+  `;
+
+  const whatsappURL = `https://wa.me/${ADMIN_PHONE}?text=${encodeURIComponent(message)}`;
+
+  window.open(whatsappURL,"_blank");
+
+  try{
+
+    await emailjs.send(
+      "YOUR_SERVICE_ID",
+      "YOUR_TEMPLATE_ID",
+      {
+        item: currentOrder.item,
+        price: currentOrder.price,
+        uid,
+        email
+      }
+    );
+
+  }catch(err){
+    console.log(err);
+  }
+
+  closeModal();
+
+  alert("Redirecting to WhatsApp ⚡");
+};
+
+
+window.addEventListener("scroll",()=>{
+
+  const header = document.querySelector("header");
+
+  if(window.scrollY > 40){
+    header.style.background = "rgba(0,0,0,.8)";
+    header.style.backdropFilter = "blur(10px)";
+  }else{
+    header.style.background = "transparent";
+    header.style.backdropFilter = "none";
+  }
 });
-
-function initSavage() {
-    document.getElementById('bank-name-display').innerText = BANK.name;
-    document.getElementById('bank-acc-display').innerText = BANK.acc;
-    document.getElementById('bank-user-display').innerText = BANK.user;
-    
-    const prices = { 100: 1200, 520: 5600, 1060: 11000, weekly: 2500 };
-    Object.keys(prices).forEach(key => {
-        const p = `${currencySymbol}${convert(prices[key])}`;
-        if(document.getElementById(`price-${key}`)) document.getElementById(`price-${key}`).innerText = p;
-        if(document.getElementById(`home-price-${key}`)) document.getElementById(`home-price-${key}`).innerText = p;
-    });
-
-    syncMarket();
-    syncHomeRecent();
-    syncAdminOrders();
-}
-
-window.openOrderModal = (item, price) => {
-    activeOrder = { item, price };
-    document.getElementById('order-summary').innerText = `${item} | ${currencySymbol}${convert(price)}`;
-    document.getElementById('order-modal').classList.remove('hidden');
-};
-
-window.processFinalOrder = async () => {
-    const uid = document.getElementById('cust-uid').value;
-    const email = document.getElementById('cust-email').value;
-    if(!uid || !email) return alert("Fill all fields!");
-    await addDoc(collection(db, "orders"), { uid, email, item: activeOrder.item, price: activeOrder.price, status: "PENDING", createdAt: Date.now() });
-    window.open(`https://wa.me/${ADMIN_PHONE}?text=ORDER:${activeOrder.item}-UID:${uid}`, '_blank');
-    closeModal('order-modal');
-};
-
-function syncHomeRecent() {
-    const q = query(collection(db, "listings"), orderBy("createdAt", "desc"), limit(3));
-    onSnapshot(q, (snap) => {
-        const grid = document.getElementById('home-recent-grid');
-        grid.innerHTML = "";
-        snap.forEach(d => {
-            const data = d.data();
-            grid.innerHTML += `<div class="card"><p style="font-size:0.6rem">RECENT_ASSET</p><h2>${currencySymbol}${convert(data.price)}</h2><button class="action-btn" onclick="openOrderModal('ACCOUNT_${d.id.substring(0,4)}', ${data.price})">VIEW</button></div>`;
-        });
-    });
-}
-
-function syncAdminOrders() {
-    const q = query(collection(db, "orders"), where("status", "==", "PENDING"), orderBy("createdAt", "desc"));
-    onSnapshot(q, (snap) => {
-        const list = document.getElementById('admin-orders-list');
-        list.innerHTML = "";
-        snap.forEach(oDoc => {
-            const data = oDoc.data();
-            list.innerHTML += `<div class="card" style="border-left:4px solid var(--gold)"><h4>${data.item}</h4><p>UID: ${data.uid}</p><button class="action-btn" onclick="completeOrder('${oDoc.id}','${data.email}','${data.uid}','${data.item}',${data.price})">DONE</button></div>`;
-        });
-    });
-}
-
-window.completeOrder = async (id, email, uid, item, price) => {
-    try {
-        await updateDoc(doc(db, "orders", id), { status: "COMPLETED" });
-        await emailjs.send("service_3ut8kuo", "template_jeabwaa", { to_name: email, order_item: item, uid: uid, price: convert(price), currency_symbol: currencySymbol });
-        alert("Fulfilled!");
-    } catch (e) { alert("Email Failed"); }
-};
-
-window.syncMarket = () => {
-    const q = query(collection(db, "listings"), orderBy("createdAt", "desc"));
-    onSnapshot(q, (snap) => {
-        const grid = document.getElementById('market-grid');
-        grid.innerHTML = "";
-        snap.forEach(d => {
-            const data = d.data();
-            grid.innerHTML += `<div class="card"><h2>${currencySymbol}${convert(data.price)}</h2><button class="action-btn" onclick="openOrderModal('ACCOUNT_${d.id.substring(0,4)}', ${data.price})">PURCHASE</button></div>`;
-        });
-    });
-};
-
-window.signInWithGoogle = () => signInWithPopup(auth, provider);
-window.userLogout = () => signOut(auth);
-window.showSection = (id) => { document.querySelectorAll('.app-section').forEach(s => s.classList.add('hidden')); document.getElementById(`section-${id}`).classList.remove('hidden'); };
-window.openModal = (id) => document.getElementById(id).classList.remove('hidden');
-window.closeModal = (id) => document.getElementById(id).classList.add('hidden');
-window.uploadAsset = async () => { const p = document.getElementById('p-price').value; if(p) await addDoc(collection(db, "listings"), { price: parseFloat(p), createdAt: Date.now() }); closeModal('sell-modal'); };

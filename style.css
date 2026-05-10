@@ -52,10 +52,13 @@ header{
 }
 
 .logo{
-  width:120px;
+  width:180px;
+
   filter:
-  drop-shadow(0 0 10px var(--purple))
-  drop-shadow(0 0 25px var(--pink));
+  drop-shadow(0 0 12px #7a00ff)
+  drop-shadow(0 0 30px #ff00c8);
+
+  transition:.3s ease;
 }
 
 nav{

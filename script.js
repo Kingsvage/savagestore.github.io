@@ -106,9 +106,9 @@ onAuthStateChanged(auth,async(user)=>{
     diamonds.classList.remove("hidden");
 
     // CHANGE NAV BUTTON
-    document.querySelector(".nav-btn").innerHTML = "LOGOUT";
+    document.getElementById("auth-btn").innerHTML = "LOGOUT";
 
-    document.querySelector(".nav-btn").onclick = logout;
+    document.getElementById("auth-btn").onclick = logout;
 
     // USER ALREADY EXISTS?
     const userRef = doc(db,"users",user.uid);
@@ -123,7 +123,7 @@ onAuthStateChanged(auth,async(user)=>{
 
     document.querySelector(".nav-btn").innerHTML = "LOGIN";
 
-    document.querySelector(".nav-btn").onclick = signInWithGoogle;
+    document.getElementById("auth-btn").onclick = signInWithGoogle;
   }
 });
 

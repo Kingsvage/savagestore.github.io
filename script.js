@@ -20,14 +20,14 @@ import {
 
 // FIREBASE CONFIG
 const firebaseConfig = {
-  apiKey: "YOUR_API_KEY",
-  authDomain: "YOUR_AUTH_DOMAIN",
-  databaseURL: "YOUR_DATABASE_URL",
-  projectId: "YOUR_PROJECT_ID",
-  storageBucket: "YOUR_STORAGE_BUCKET",
-  messagingSenderId: "YOUR_MESSAGING_ID",
-  appId: "YOUR_APP_ID",
-  measurementId: "YOUR_MEASUREMENT_ID"
+  apiKey: "AIzaSyB7W0bvFnDfEUzuwuAIoGCwRakfFiTEt48",
+  authDomain: "savage-store-18507.firebaseapp.com",
+  databaseURL: "https://savage-store-18507-default-rtdb.firebaseio.com",
+  projectId: "savage-store-18507",
+  storageBucket: "savage-store-18507.firebasestorage.app",
+  messagingSenderId: "521961005705",
+  appId: "1:521961005705:web:216bf71293154e67c29c58",
+  measurementId: "G-86K4ZGMZQ4"
 };
 
 

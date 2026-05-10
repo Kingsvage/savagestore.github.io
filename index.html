@@ -3,42 +3,86 @@
 <head>
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
   <title>Savage Store | Free Fire Top Up</title>
 
+  <meta
+    name="description"
+    content="Savage Store - Instant Free Fire Diamond Top Up with fast delivery and secure payments."
+  />
+
   <link rel="icon" href="https://i.ibb.co/bMVsz0g1/SAVAGE-LOGO.png">
+
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Poppins:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet"
+  >
 
   <link rel="stylesheet" href="style.css">
 
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 </head>
+
 <body>
 
   <!-- HERO -->
   <section class="hero">
+
     <div class="hero-overlay"></div>
 
     <header>
+
       <div class="logo-wrap">
-        <img src="https://i.ibb.co/bMVsz0g1/SAVAGE-LOGO.png" class="logo" alt="Savage Store Logo">
+        <img
+          src="https://i.ibb.co/bMVsz0g1/SAVAGE-LOGO.png"
+          class="logo"
+          alt="Savage Store Logo"
+        >
       </div>
 
       <nav>
-        <a href="#" id="store-link" style="display:none;">Store</a>
+
+        <a
+          href="#diamonds"
+          id="store-link"
+          style="display:none;"
+        >
+          Store
+        </a>
+
         <a href="#features">Features</a>
+
         <a href="#reviews">Reviews</a>
-        <button class="nav-btn" onclick="signInWithGoogle()">Login</button>
+
+        <button
+          type="button"
+          class="nav-btn"
+          id="nav-login-btn"
+          onclick="signInWithGoogle()"
+        >
+          Login
+        </button>
+
       </nav>
     </header>
 
+
     <div class="hero-content">
+
+      <!-- LEFT -->
       <div class="hero-left">
-        <span class="top-tag">⚡ #1 Free Fire Top Up Store</span>
+
+        <span class="top-tag">
+          ⚡ #1 Free Fire Top Up Store
+        </span>
 
         <h1>
-          BUY FREE FIRE <span>DIAMONDS</span><br>
+          BUY FREE FIRE
+          <span>DIAMONDS</span>
+          <br>
           IN SECONDS
         </h1>
 
@@ -48,23 +92,37 @@
 
         <div class="hero-buttons">
 
-<button
-  class="primary-btn"
-  id="hero-login-btn"
-  onclick="signInWithGoogle()"
->
-  LOGIN WITH GOOGLE ⚡
-</button>
-          <button class="primary-btn" onclick="scrollToSection('diamonds')">
+          <button
+            type="button"
+            class="primary-btn"
+            id="hero-login-btn"
+            onclick="signInWithGoogle()"
+          >
+            LOGIN WITH GOOGLE ⚡
+          </button>
+
+          <button
+            type="button"
+            class="primary-btn"
+            onclick="scrollToSection('diamonds')"
+          >
             BUY DIAMONDS ⚡
           </button>
 
-          <button class="secondary-btn" onclick="scrollToSection('features')">
+          <button
+            type="button"
+            class="secondary-btn"
+            onclick="scrollToSection('features')"
+          >
             WHY US?
           </button>
+
         </div>
 
+
+        <!-- STATS -->
         <div class="stats">
+
           <div>
             <h2>50K+</h2>
             <p>Customers</p>
@@ -79,13 +137,25 @@
             <h2>24/7</h2>
             <p>Support</p>
           </div>
+
         </div>
+
       </div>
 
+
+      <!-- RIGHT -->
       <div class="hero-right">
+
         <div class="hero-card floating">
-          <img src="https://i.ibb.co/bMVsz0g1/SAVAGE-LOGO.png" class="hero-card-logo">
+
+          <img
+            src="https://i.ibb.co/bMVsz0g1/SAVAGE-LOGO.png"
+            class="hero-card-logo"
+            alt="Savage Store"
+          >
+
           <h3>Savage Premium</h3>
+
           <p>Best prices in your region.</p>
 
           <div class="price-box">
@@ -93,80 +163,191 @@
             <strong>₦2,000</strong>
           </div>
 
-          <button onclick="scrollToSection('diamonds')">
+          <button
+            type="button"
+            onclick="scrollToSection('diamonds')"
+          >
             BUY NOW
           </button>
+
         </div>
+
       </div>
+
     </div>
+
   </section>
 
 
-  <!-- LIVE TICKER -->
+  <!-- LIVE BAR -->
   <section class="live-bar">
+
     <div class="live-track">
-      🔥 Kelvin just bought 1060 Diamonds • 🔥 Baddie FF purchased 520 Diamonds • 🔥 Instant delivery active • 🔥 Secure checkout enabled • 🔥 Global pricing enabled
+      🔥 Kelvin just bought 1060 Diamonds •
+      🔥 Baddie FF purchased 520 Diamonds •
+      🔥 Instant delivery active •
+      🔥 Secure checkout enabled •
+      🔥 Global pricing enabled
     </div>
+
   </section>
 
 
   <!-- DIAMONDS -->
   <section class="diamonds-section hidden" id="diamonds">
+
     <div class="section-title">
       <span>TOP UP</span>
       <h2>POPULAR DIAMOND PACKAGES</h2>
     </div>
 
+
     <div class="diamond-grid">
 
+      <!-- CARD -->
       <div class="diamond-card">
-        <div class="badge">BEST SELLER</div>
-        <img src="https://cdn-icons-png.flaticon.com/512/2583/2583344.png">
+
+        <div class="badge">
+          BEST SELLER
+        </div>
+
+        <img
+          src="https://cdn-icons-png.flaticon.com/512/2583/2583344.png"
+          alt="Diamond Icon"
+        >
+
         <h3>100 Diamonds</h3>
-        <p class="price">₦500</p>
-        <button onclick="openOrderModal('100 Diamonds',500)">BUY NOW</button>
+
+        <p class="price">
+          ₦500
+        </p>
+
+        <button
+          type="button"
+          onclick="openOrderModal('100 Diamonds',500)"
+        >
+          BUY NOW
+        </button>
+
       </div>
 
+
+      <!-- CARD -->
       <div class="diamond-card">
-        <img src="https://cdn-icons-png.flaticon.com/512/2583/2583344.png">
+
+        <img
+          src="https://cdn-icons-png.flaticon.com/512/2583/2583344.png"
+          alt="Diamond Icon"
+        >
+
         <h3>310 Diamonds</h3>
-        <p class="price">₦1,200</p>
-        <button onclick="openOrderModal('310 Diamonds',1200)">BUY NOW</button>
+
+        <p class="price">
+          ₦1,200
+        </p>
+
+        <button
+          type="button"
+          onclick="openOrderModal('310 Diamonds',1200)"
+        >
+          BUY NOW
+        </button>
+
       </div>
 
+
+      <!-- FEATURED -->
       <div class="diamond-card featured-card">
-        <div class="badge">MOST POPULAR</div>
-        <img src="https://cdn-icons-png.flaticon.com/512/2583/2583344.png">
+
+        <div class="badge">
+          MOST POPULAR
+        </div>
+
+        <img
+          src="https://cdn-icons-png.flaticon.com/512/2583/2583344.png"
+          alt="Diamond Icon"
+        >
+
         <h3>520 Diamonds</h3>
-        <p class="price">₦2,000</p>
-        <button onclick="openOrderModal('520 Diamonds',2000)">BUY NOW</button>
+
+        <p class="price">
+          ₦2,000
+        </p>
+
+        <button
+          type="button"
+          onclick="openOrderModal('520 Diamonds',2000)"
+        >
+          BUY NOW
+        </button>
+
       </div>
 
+
+      <!-- CARD -->
       <div class="diamond-card">
-        <img src="https://cdn-icons-png.flaticon.com/512/2583/2583344.png">
+
+        <img
+          src="https://cdn-icons-png.flaticon.com/512/2583/2583344.png"
+          alt="Diamond Icon"
+        >
+
         <h3>1060 Diamonds</h3>
-        <p class="price">₦4,000</p>
-        <button onclick="openOrderModal('1060 Diamonds',4000)">BUY NOW</button>
+
+        <p class="price">
+          ₦4,000
+        </p>
+
+        <button
+          type="button"
+          onclick="openOrderModal('1060 Diamonds',4000)"
+        >
+          BUY NOW
+        </button>
+
       </div>
 
+
+      <!-- PREMIUM -->
       <div class="diamond-card">
-        <div class="badge purple">PREMIUM</div>
-        <img src="https://cdn-icons-png.flaticon.com/512/2583/2583344.png">
+
+        <div class="badge purple">
+          PREMIUM
+        </div>
+
+        <img
+          src="https://cdn-icons-png.flaticon.com/512/2583/2583344.png"
+          alt="Diamond Icon"
+        >
+
         <h3>2180 Diamonds</h3>
-        <p class="price">₦8,000</p>
-        <button onclick="openOrderModal('2180 Diamonds',8000)">BUY NOW</button>
+
+        <p class="price">
+          ₦8,000
+        </p>
+
+        <button
+          type="button"
+          onclick="openOrderModal('2180 Diamonds',8000)"
+        >
+          BUY NOW
+        </button>
+
       </div>
 
     </div>
+
   </section>
 
 
   <!-- FEATURES -->
   <section class="features-section" id="features">
+
     <div class="section-title">
       <span>WHY CHOOSE US?</span>
       <h2>SAVAGE STORE ADVANTAGES</h2>
     </div>
+
 
     <div class="features-grid">
 
@@ -191,79 +372,134 @@
       </div>
 
     </div>
+
   </section>
 
 
   <!-- REVIEWS -->
   <section class="reviews-section" id="reviews">
+
     <div class="section-title">
       <span>PLAYER REVIEWS</span>
       <h2>WHAT GAMERS SAY</h2>
     </div>
 
+
     <div class="reviews-grid">
 
       <div class="review-card">
-        <p>
-          “Actually got my diamonds instantly 😭🔥”
-        </p>
+        <p>“Actually got my diamonds instantly 😭🔥”</p>
         <span>- KingSavage</span>
       </div>
 
       <div class="review-card">
-        <p>
-          “Best prices I’ve seen in Nigeria fr.”
-        </p>
+        <p>“Best prices I’ve seen in Nigeria fr.”</p>
         <span>- Baddie FF</span>
       </div>
 
       <div class="review-card">
-        <p>
-          “The UI looks insane on mobile.”
-        </p>
+        <p>“The UI looks insane on mobile.”</p>
         <span>- Smokezy</span>
       </div>
 
     </div>
+
   </section>
 
 
   <!-- FOOTER -->
   <footer>
-    <img src="https://i.ibb.co/bMVsz0g1/SAVAGE-LOGO.png">
+
+    <img
+      src="https://i.ibb.co/bMVsz0g1/SAVAGE-LOGO.png"
+      alt="Savage Store Logo"
+    >
+
     <p>Savage Store © 2026</p>
-    <span>Fast • Secure • Legendary</span>
+
+    <span>
+      Fast • Secure • Legendary
+    </span>
+
   </footer>
 
 
-  <!-- ORDER MODAL -->
+  <!-- MODAL -->
   <div class="modal hidden" id="order-modal">
-    <div class="modal-box">
-      <button class="close-btn" onclick="closeModal()">✕</button>
 
-      <img src="https://i.ibb.co/bMVsz0g1/SAVAGE-LOGO.png" class="modal-logo">
+    <div class="modal-box">
+
+      <button
+        type="button"
+        class="close-btn"
+        onclick="closeModal()"
+      >
+        ✕
+      </button>
+
+      <img
+        src="https://i.ibb.co/bMVsz0g1/SAVAGE-LOGO.png"
+        class="modal-logo"
+        alt="Savage Store Logo"
+      >
 
       <h2>Complete Your Order</h2>
 
-      <div class="summary-box" id="order-summary"></div>
+      <div
+        class="summary-box"
+        id="order-summary"
+      ></div>
 
-      <input type="text" id="uid" placeholder="Enter Free Fire UID">
-      <input type="email" id="email" placeholder="Enter Email Address">
+      <input
+        type="text"
+        id="uid"
+        placeholder="Enter Free Fire UID"
+      >
 
+      <input
+        type="email"
+        id="email"
+        placeholder="Enter Email Address"
+      >
+
+
+      <!-- PAYMENT -->
       <div class="payment-box">
+
         <h3>Payment Details</h3>
-        <p><strong>Bank:</strong> OPAY</p>
-        <p><strong>Account:</strong> 7120004769</p>
-        <p><strong>Name:</strong> SAMUEL SEWANU OKESOLA</p>
+
+        <p>
+          <strong>Bank:</strong>
+          OPAY
+        </p>
+
+        <p>
+          <strong>Account:</strong>
+          7120004769
+        </p>
+
+        <p>
+          <strong>Name:</strong>
+          SAMUEL SEWANU OKESOLA
+        </p>
+
       </div>
 
-      <button class="primary-btn full-btn" onclick="completeOrder()">
+
+      <button
+        type="button"
+        class="primary-btn full-btn"
+        onclick="completeOrder()"
+      >
         I HAVE PAID ⚡
       </button>
+
     </div>
+
   </div>
 
 
   <script type="module" src="script.js"></script>
+
 </body>
-    </html>
+</html>

@@ -480,3 +480,11 @@ input{
     font-size:2rem;
   }
 }
+
+@media(max-width:650px){
+
+  .logo{
+    width:145px;
+  }
+
+}

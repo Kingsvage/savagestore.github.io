@@ -12,7 +12,6 @@ import {
   getFirestore,
   doc,
   setDoc,
-  getDoc,
   collection,
   addDoc,
   serverTimestamp
@@ -21,21 +20,22 @@ import {
 
 // FIREBASE CONFIG
 const firebaseConfig = {
-  apiKey: "AIzaSyB7W0bvFnDfEUzuwuAIoGCwRakfFiTEt48",
-  authDomain: "savage-store-18507.firebaseapp.com",
-  databaseURL: "https://savage-store-18507-default-rtdb.firebaseio.com",
-  projectId: "savage-store-18507",
-  storageBucket: "savage-store-18507.firebasestorage.app",
-  messagingSenderId: "521961005705",
-  appId: "1:521961005705:web:216bf71293154e67c29c58",
-  measurementId: "G-86K4ZGMZQ4"
+  apiKey: "YOUR_API_KEY",
+  authDomain: "YOUR_AUTH_DOMAIN",
+  databaseURL: "YOUR_DATABASE_URL",
+  projectId: "YOUR_PROJECT_ID",
+  storageBucket: "YOUR_STORAGE_BUCKET",
+  messagingSenderId: "YOUR_MESSAGING_ID",
+  appId: "YOUR_APP_ID",
+  measurementId: "YOUR_MEASUREMENT_ID"
 };
 
 
-// INITIALIZE
+// INITIALIZE FIREBASE
 const app = initializeApp(firebaseConfig);
 
 const auth = getAuth(app);
+
 const db = getFirestore(app);
 
 const provider = new GoogleAuthProvider();
@@ -43,44 +43,52 @@ const provider = new GoogleAuthProvider();
 
 // GLOBAL ORDER
 let currentOrder = {
-  item:"",
-  price:0
+  item: "",
+  price: 0
 };
 
 
-// SCROLL
+// SCROLL FUNCTION
 window.scrollToSection = (id) => {
 
   document.getElementById(id).scrollIntoView({
-    behavior:"smooth"
+    behavior: "smooth"
   });
 };
 
 
-// LOGIN
+// GOOGLE LOGIN
 window.signInWithGoogle = async () => {
 
-  try{
+  try {
 
-    const result = await signInWithPopup(auth,provider);
+    const result =
+      await signInWithPopup(auth, provider);
 
     const user = result.user;
 
-    // SAVE USER
-    await setDoc(doc(db,"users",user.uid),{
 
-      uid:user.uid,
-      name:user.displayName,
-      email:user.email,
-      photo:user.photoURL,
+    // SAVE USER TO FIRESTORE
+    await setDoc(
+      doc(db, "users", user.uid),
+      {
+        uid: user.uid,
+        name: user.displayName,
+        email: user.email,
+        photo: user.photoURL,
 
-      createdAt:serverTimestamp()
+        createdAt: serverTimestamp()
+      },
+      { merge: true }
+    );
 
-    },{merge:true});
 
-  }catch(err){
+    alert(`Welcome ${user.displayName} ⚡`);
+
+  } catch (err) {
 
     console.log(err);
+
     alert(err.message);
   }
 };
@@ -89,121 +97,169 @@ window.signInWithGoogle = async () => {
 // LOGOUT
 window.logout = async () => {
 
-  await signOut(auth);
+  try {
+
+    await signOut(auth);
+
+    alert("Logged out successfully ⚡");
+
+  } catch (err) {
+
+    console.log(err);
+
+    alert(err.message);
+  }
 };
 
 
 // AUTH STATE
-onAuthStateChanged(auth,async(user)=>{
+onAuthStateChanged(auth, async (user) => {
 
-  const storeLink = document.getElementById("store-link");
+  const storeLink =
+    document.getElementById("store-link");
 
-  const diamonds = document.getElementById("diamonds");
+  const diamonds =
+    document.getElementById("diamonds");
 
   const heroLoginBtn =
-  document.getElementById("hero-login-btn");
+    document.getElementById("hero-login-btn");
+
+  const navLoginBtn =
+    document.getElementById("nav-login-btn");
 
 
-  if(user){
+  if (user) {
 
-    storeLink.style.display = "block";
+    // SHOW STORE
+    storeLink.style.display = "inline-block";
 
+    // SHOW DIAMONDS
     diamonds.classList.remove("hidden");
 
+    // HIDE HERO LOGIN BUTTON
     heroLoginBtn.style.display = "none";
 
+    // CHANGE NAV BUTTON TO LOGOUT
+    navLoginBtn.innerHTML = "LOGOUT";
 
-    document.getElementById("auth-btn").innerHTML = "LOGOUT";
+    navLoginBtn.onclick = logout;
 
-    document.getElementById("auth-btn").onclick = logout;
+  } else {
 
-  }else{
-
+    // HIDE STORE
     storeLink.style.display = "none";
 
+    // HIDE DIAMONDS
     diamonds.classList.add("hidden");
 
-    heroLoginBtn.style.display = "block";
+    // SHOW HERO LOGIN
+    heroLoginBtn.style.display = "inline-block";
 
+    // CHANGE NAV BUTTON TO LOGIN
+    navLoginBtn.innerHTML = "LOGIN";
 
-    document.getElementById("auth-btn").innerHTML = "LOGIN";
-
-    document.getElementById("auth-btn").onclick = signInWithGoogle;
+    navLoginBtn.onclick = signInWithGoogle;
   }
 });
 
-// OPEN ORDER
-window.openOrderModal = (item,price)=>{
+
+// OPEN ORDER MODAL
+window.openOrderModal = (item, price) => {
 
   const user = auth.currentUser;
 
-  if(!user){
+  if (!user) {
 
     alert("Please login first ⚡");
+
     return;
   }
 
   currentOrder.item = item;
+
   currentOrder.price = price;
 
-  document.getElementById("order-summary").innerHTML = `
 
-    <strong>${item}</strong><br><br>
+  document.getElementById("order-summary").innerHTML = `
+  
+    <strong>${item}</strong>
+    <br><br>
 
     Price: ₦${price.toLocaleString()}
   `;
 
-  document.getElementById("order-modal")
-  .classList.remove("hidden");
+
+  document
+    .getElementById("order-modal")
+    .classList.remove("hidden");
 };
 
 
 // CLOSE MODAL
-window.closeModal = ()=>{
+window.closeModal = () => {
 
-  document.getElementById("order-modal")
-  .classList.add("hidden");
+  document
+    .getElementById("order-modal")
+    .classList.add("hidden");
 };
 
 
 // COMPLETE ORDER
-window.completeOrder = async ()=>{
+window.completeOrder = async () => {
 
-  const uid = document.getElementById("uid").value.trim();
-  const email = document.getElementById("email").value.trim();
+  const uid =
+    document.getElementById("uid")
+    .value
+    .trim();
 
-  if(!uid || !email){
+  const email =
+    document.getElementById("email")
+    .value
+    .trim();
 
-    alert("Please fill all fields.");
+
+  if (!uid || !email) {
+
+    alert("Please fill all fields ⚡");
+
     return;
   }
+
 
   const user = auth.currentUser;
 
-  if(!user){
+  if (!user) {
 
-    alert("Please login first.");
+    alert("Please login first ⚡");
+
     return;
   }
 
-  try{
 
-    await addDoc(collection(db,"orders"),{
+  try {
 
-      userId:user.uid,
-      customerName:user.displayName,
-      customerEmail:user.email,
+    // SAVE ORDER
+    await addDoc(collection(db, "orders"), {
 
-      gameUID:uid,
+      userId: user.uid,
 
-      item:currentOrder.item,
-      price:currentOrder.price,
+      customerName: user.displayName,
 
-      status:"pending",
+      customerEmail: user.email,
 
-      createdAt:serverTimestamp()
+      gameUID: uid,
+
+      item: currentOrder.item,
+
+      price: currentOrder.price,
+
+      status: "pending",
+
+      createdAt: serverTimestamp()
     });
 
+
+    // WHATSAPP MESSAGE
     const message = `
 
 SAVAGE STORE ORDER
@@ -215,16 +271,30 @@ EMAIL: ${email}
 
 `;
 
+
+    // CHANGE NUMBER HERE
     const whatsappURL =
-`https://wa.me/2347120004769?text=${encodeURIComponent(message)}`;
+      `https://wa.me/234XXXXXXXXXX?text=${encodeURIComponent(message)}`;
 
-    window.open(whatsappURL,"_blank");
 
+    // OPEN WHATSAPP
+    window.open(whatsappURL, "_blank");
+
+
+    // CLOSE MODAL
     closeModal();
+
+
+    // CLEAR INPUTS
+    document.getElementById("uid").value = "";
+
+    document.getElementById("email").value = "";
+
 
     alert("Order submitted successfully ⚡");
 
-  }catch(err){
+
+  } catch (err) {
 
     console.log(err);
 
@@ -233,21 +303,37 @@ EMAIL: ${email}
 };
 
 
+// ESC KEY CLOSE MODAL
+document.addEventListener("keydown", (e) => {
+
+  if (e.key === "Escape") {
+
+    closeModal();
+  }
+});
+
+
 // HEADER EFFECT
-window.addEventListener("scroll",()=>{
+window.addEventListener("scroll", () => {
 
-  const header = document.querySelector("header");
+  const header =
+    document.querySelector("header");
 
-  if(window.scrollY > 40){
 
-    header.style.background = "rgba(0,0,0,.8)";
+  if (window.scrollY > 40) {
 
-    header.style.backdropFilter = "blur(10px)";
+    header.style.background =
+      "rgba(0,0,0,.85)";
 
-  }else{
+    header.style.backdropFilter =
+      "blur(10px)";
 
-    header.style.background = "transparent";
+  } else {
 
-    header.style.backdropFilter = "none";
+    header.style.background =
+      "transparent";
+
+    header.style.backdropFilter =
+      "none";
   }
 });

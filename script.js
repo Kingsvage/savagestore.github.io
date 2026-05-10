@@ -97,7 +97,12 @@ window.logout = async () => {
 onAuthStateChanged(auth,async(user)=>{
 
   const storeLink = document.getElementById("store-link");
+
   const diamonds = document.getElementById("diamonds");
+
+  const heroLoginBtn =
+  document.getElementById("hero-login-btn");
+
 
   if(user){
 
@@ -105,15 +110,12 @@ onAuthStateChanged(auth,async(user)=>{
 
     diamonds.classList.remove("hidden");
 
-    // CHANGE NAV BUTTON
+    heroLoginBtn.style.display = "none";
+
+
     document.getElementById("auth-btn").innerHTML = "LOGOUT";
 
     document.getElementById("auth-btn").onclick = logout;
-
-    // USER ALREADY EXISTS?
-    const userRef = doc(db,"users",user.uid);
-
-    await getDoc(userRef);
 
   }else{
 
@@ -121,12 +123,14 @@ onAuthStateChanged(auth,async(user)=>{
 
     diamonds.classList.add("hidden");
 
-    document.querySelector(".nav-btn").innerHTML = "LOGIN";
+    heroLoginBtn.style.display = "block";
+
+
+    document.getElementById("auth-btn").innerHTML = "LOGIN";
 
     document.getElementById("auth-btn").onclick = signInWithGoogle;
   }
 });
-
 
 // OPEN ORDER
 window.openOrderModal = (item,price)=>{

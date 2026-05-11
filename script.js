@@ -42,7 +42,7 @@ let currentOrder = {
   price: 0
 };
 
-const whatsappNumber = "2348033515808";
+const whatsappNumber = "2347120004769";
 
 window.scrollToSection = (id) => {
   const section = document.getElementById(id);
@@ -198,7 +198,7 @@ window.closeModal = () => {
 };
 
 window.copyAccountNumber = async () => {
-  const accountNumber = "7120004769";
+  const accountNumber = "7071048081";
 
   try {
     await navigator.clipboard.writeText(accountNumber);

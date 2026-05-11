@@ -21,7 +21,7 @@
     rel="stylesheet"
   >
 
-  <link rel="stylesheet" href="style.css">
+  <link rel="stylesheet" href="style.css?v=3">
 
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 </head>
@@ -466,41 +466,38 @@
       <!-- PAYMENT -->
       <div class="payment-box">
 
-        <h3>Payment Details</h3>
+  <h3>Payment Details</h3>
 
-        <p>
-          <strong>Bank:</strong>
-          OPAY
-        </p>
+  <p>
+    <strong>Bank:</strong>
+    PALMPAY
+  </p>
 
-        <p>
-          <strong>Account:</strong>
-          7120004769
-        </p>
+  <p>
+    <strong>Account:</strong>
+    <span id="account-number">70718081</span>
+  </p>
 
-        <p>
-          <strong>Name:</strong>
-          SAMUEL SEWANU OKESOLA
-        </p>
+  <p>
+    <strong>Name:</strong>
+    CHUKWUMA CHIDOZIE FRANCIS
+  </p>
 
-      </div>
+  <button
+    type="button"
+    class="copy-btn"
+    onclick="copyAccountNumber()"
+  >
+    COPY ACCOUNT NUMBER
+  </button>
 
-
-      <button
-        type="button"
-        class="primary-btn full-btn"
-        onclick="completeOrder()"
-      >
-        I HAVE PAID ⚡
-      </button>
-
-    </div>
+</div>
 
   </div>
 
 <div class="toast hidden" id="toast"></div>
 
-<script type="module" src="./script.js"></script>
+<script type="module" src="./script.js?v=3"></script>
 
 </body>
 </html>

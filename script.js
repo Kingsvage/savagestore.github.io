@@ -305,15 +305,11 @@ async function sendConfirmationEmail(orderData) {
       emailTemplateId,
       {
         to_email: orderData.customerEmail,
-        customer_email: orderData.customerEmail,
-        email: orderData.customerEmail,
-        customer_name: orderData.customerName,
-        order_id: orderData.orderId,
-        item: orderData.item,
-        price: `₦${Number(orderData.price).toLocaleString()}`,
+        to_name: orderData.customerName,
+        order_item: orderData.item,
         uid: orderData.gameUID,
-        payment_proof: orderData.paymentProof,
-        status: orderData.status
+        currency_symbol: "₦",
+        price: Number(orderData.price).toLocaleString()
       }
     );
 

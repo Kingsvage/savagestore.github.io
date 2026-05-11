@@ -78,7 +78,7 @@ async function saveUser(user) {
       name: user.displayName,
       email: user.email,
       photo: user.photoURL,
-      createdAt: serverTimestamp()
+      updatedAt: serverTimestamp()
     },
     { merge: true }
   );
@@ -86,12 +86,17 @@ async function saveUser(user) {
 
 window.signInWithGoogle = async () => {
   try {
+    showToast("Opening Google login...");
+
     const result = await signInWithPopup(auth, provider);
     const user = result.user;
 
-    await saveUser(user);
-
     showToast(`Welcome ${user.displayName} ⚡`);
+
+    saveUser(user).catch((err) => {
+      console.error("SAVE USER ERROR:", err);
+    });
+
   } catch (err) {
     console.error("LOGIN ERROR:", err);
 
@@ -107,7 +112,6 @@ window.signInWithGoogle = async () => {
 window.logout = async () => {
   try {
     await signOut(auth);
-
     showToast("Logged out successfully ⚡");
   } catch (err) {
     console.error("LOGOUT ERROR:", err);
@@ -121,7 +125,7 @@ window.logout = async () => {
   }
 };
 
-onAuthStateChanged(auth, async (user) => {
+onAuthStateChanged(auth, (user) => {
   const storeLink = document.getElementById("store-link");
   const diamonds = document.getElementById("diamonds");
   const heroLoginBtn = document.getElementById("hero-login-btn");
@@ -134,8 +138,6 @@ onAuthStateChanged(auth, async (user) => {
   }
 
   if (user) {
-    await saveUser(user);
-
     storeLink.style.display = "inline-block";
     diamonds.classList.remove("hidden");
     heroLoginBtn.style.display = "none";
@@ -146,6 +148,11 @@ onAuthStateChanged(auth, async (user) => {
     if (emailInput) {
       emailInput.value = user.email;
     }
+
+    saveUser(user).catch((err) => {
+      console.error("SAVE USER ERROR:", err);
+    });
+
   } else {
     storeLink.style.display = "none";
     diamonds.classList.add("hidden");

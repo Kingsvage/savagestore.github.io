@@ -215,7 +215,7 @@ onAuthStateChanged(auth, (user) => {
       emailInput.value = user.email;
     }
 
-    if (adminDashboard && adminEmails.includes(user.email)) {
+    if (adminDashboard && adminEmails.includes(user.email.toLowerCase())) {
       adminDashboard.classList.remove("hidden");
       loadAdminOrders();
     } else if (adminDashboard) {

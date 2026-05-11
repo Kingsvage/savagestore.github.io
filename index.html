@@ -406,6 +406,20 @@
 
   </section>
 
+<!-- ADMIN DASHBOARD -->
+<section class="admin-section hidden" id="admin-dashboard">
+
+  <div class="section-title">
+    <span>ADMIN</span>
+    <h2>ORDER DASHBOARD</h2>
+  </div>
+
+  <div id="orders-list" class="orders-list">
+    <p>Loading orders...</p>
+  </div>
+
+</section>
+
 
   <!-- FOOTER -->
   <footer>
@@ -424,80 +438,96 @@
   </footer>
 
 
-  <!-- MODAL -->
-  <div class="modal hidden" id="order-modal">
+<!-- MODAL -->
+<div class="modal hidden" id="order-modal">
 
-    <div class="modal-box">
+  <div class="modal-box">
+
+    <button
+      type="button"
+      class="close-btn"
+      onclick="closeModal()"
+    >
+      ✕
+    </button>
+
+    <img
+      src="https://i.ibb.co/bMVsz0g1/SAVAGE-LOGO.png"
+      class="modal-logo"
+      alt="Savage Store Logo"
+    >
+
+    <h2>Complete Your Order</h2>
+
+    <div
+      class="summary-box"
+      id="order-summary"
+    ></div>
+
+    <input
+      type="text"
+      id="uid"
+      placeholder="Enter Free Fire UID"
+    >
+
+    <input
+      type="email"
+      id="email"
+      placeholder="Enter Email Address"
+    >
+
+    <label class="proof-label">
+      Upload Payment Proof
+    </label>
+
+    <input
+      type="file"
+      id="payment-proof"
+      accept="image/*"
+    >
+
+    <div class="payment-box">
+
+      <h3>Payment Details</h3>
+
+      <p>
+        <strong>Bank:</strong>
+        PALMPAY
+      </p>
+
+      <p>
+        <strong>Account:</strong>
+        <span id="account-number">70718081</span>
+      </p>
+
+      <p>
+        <strong>Name:</strong>
+        CHUKWUMA CHIDOZIE FRANCIS
+      </p>
 
       <button
         type="button"
-        class="close-btn"
-        onclick="closeModal()"
+        class="copy-btn"
+        onclick="copyAccountNumber()"
       >
-        ✕
+        COPY ACCOUNT NUMBER
       </button>
 
-      <img
-        src="https://i.ibb.co/bMVsz0g1/SAVAGE-LOGO.png"
-        class="modal-logo"
-        alt="Savage Store Logo"
-      >
+    </div>
 
-      <h2>Complete Your Order</h2>
-
-      <div
-        class="summary-box"
-        id="order-summary"
-      ></div>
-
-      <input
-        type="text"
-        id="uid"
-        placeholder="Enter Free Fire UID"
-      >
-
-      <input
-        type="email"
-        id="email"
-        placeholder="Enter Email Address"
-      >
-
-
-      <!-- PAYMENT -->
-      <div class="payment-box">
-
-  <h3>Payment Details</h3>
-
-  <p>
-    <strong>Bank:</strong>
-    PALMPAY
-  </p>
-
-  <p>
-    <strong>Account:</strong>
-    <span id="account-number">70718081</span>
-  </p>
-
-  <p>
-    <strong>Name:</strong>
-    CHUKWUMA CHIDOZIE FRANCIS
-  </p>
-
-  <button
-    type="button"
-    class="copy-btn"
-    onclick="copyAccountNumber()"
-  >
-    COPY ACCOUNT NUMBER
-  </button>
-
-</div>
+    <button
+      type="button"
+      class="primary-btn full-btn"
+      onclick="completeOrder()"
+    >
+      I HAVE PAID ⚡
+    </button>
 
   </div>
 
-<div class="toast hidden" id="toast"></div>
+</div>
 
-<script type="module" src="./script.js?v=3"></script>
+<script type="module" src="./script.js?v=4"></script>
 
 </body>
 </html>

@@ -3,8 +3,7 @@ import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/fireba
 import {
   getAuth,
   GoogleAuthProvider,
-  signInWithRedirect,
-  getRedirectResult,
+  signInWithPopup,
   signOut,
   onAuthStateChanged
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
@@ -45,7 +44,6 @@ let currentOrder = {
 
 const whatsappNumber = "2348033515808";
 
-/* SCROLL FUNCTION */
 window.scrollToSection = (id) => {
   const section = document.getElementById(id);
 
@@ -56,7 +54,6 @@ window.scrollToSection = (id) => {
   }
 };
 
-/* TOAST MESSAGE */
 window.showToast = (message) => {
   const toast = document.getElementById("toast");
 
@@ -73,7 +70,6 @@ window.showToast = (message) => {
   }, 3500);
 };
 
-/* SAVE USER TO FIRESTORE */
 async function saveUser(user) {
   await setDoc(
     doc(db, "users", user.uid),
@@ -88,10 +84,14 @@ async function saveUser(user) {
   );
 }
 
-/* GOOGLE LOGIN */
 window.signInWithGoogle = async () => {
   try {
-    await signInWithRedirect(auth, provider);
+    const result = await signInWithPopup(auth, provider);
+    const user = result.user;
+
+    await saveUser(user);
+
+    showToast(`Welcome ${user.displayName} ⚡`);
   } catch (err) {
     console.error("LOGIN ERROR:", err);
 
@@ -104,29 +104,10 @@ window.signInWithGoogle = async () => {
   }
 };
 
-/* CHECK REDIRECT LOGIN RESULT */
-getRedirectResult(auth)
-  .then(async (result) => {
-    if (result && result.user) {
-      await saveUser(result.user);
-      showToast(`Welcome ${result.user.displayName} ⚡`);
-    }
-  })
-  .catch((err) => {
-    console.error("REDIRECT LOGIN ERROR:", err);
-
-    alert(
-      "Redirect login failed:\n\n" +
-      err.code +
-      "\n\n" +
-      err.message
-    );
-  });
-
-/* LOGOUT */
 window.logout = async () => {
   try {
     await signOut(auth);
+
     showToast("Logged out successfully ⚡");
   } catch (err) {
     console.error("LOGOUT ERROR:", err);
@@ -140,7 +121,6 @@ window.logout = async () => {
   }
 };
 
-/* AUTH STATE */
 onAuthStateChanged(auth, async (user) => {
   const storeLink = document.getElementById("store-link");
   const diamonds = document.getElementById("diamonds");
@@ -149,7 +129,7 @@ onAuthStateChanged(auth, async (user) => {
   const emailInput = document.getElementById("email");
 
   if (!storeLink || !diamonds || !heroLoginBtn || !navLoginBtn) {
-    console.error("One or more HTML elements are missing.");
+    console.error("Some HTML elements are missing.");
     return;
   }
 
@@ -176,7 +156,6 @@ onAuthStateChanged(auth, async (user) => {
   }
 });
 
-/* OPEN ORDER MODAL */
 window.openOrderModal = (item, price) => {
   const user = auth.currentUser;
 
@@ -203,7 +182,6 @@ window.openOrderModal = (item, price) => {
   document.getElementById("order-modal").classList.remove("hidden");
 };
 
-/* CLOSE MODAL */
 window.closeModal = () => {
   const modal = document.getElementById("order-modal");
 
@@ -212,7 +190,6 @@ window.closeModal = () => {
   }
 };
 
-/* COPY ACCOUNT NUMBER */
 window.copyAccountNumber = async () => {
   const accountNumber = "7120004769";
 
@@ -224,12 +201,10 @@ window.copyAccountNumber = async () => {
   }
 };
 
-/* ORDER ID */
 window.generateOrderId = () => {
   return "SVG-" + Date.now().toString().slice(-8);
 };
 
-/* COMPLETE ORDER */
 window.completeOrder = async () => {
   const uid = document.getElementById("uid").value.trim();
   const email = document.getElementById("email").value.trim();
@@ -298,7 +273,6 @@ I have made payment.
   }
 };
 
-/* MOBILE MENU */
 window.toggleMobileMenu = () => {
   const nav = document.querySelector("nav");
 
@@ -307,14 +281,12 @@ window.toggleMobileMenu = () => {
   }
 };
 
-/* ESC KEY CLOSE MODAL */
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") {
     closeModal();
   }
 });
 
-/* HEADER EFFECT */
 window.addEventListener("scroll", () => {
   const header = document.querySelector("header");
 

@@ -1,339 +1,102 @@
-import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
+/* MOBILE MENU BUTTON */
+.menu-btn{
+  display:none;
+  background:linear-gradient(90deg,var(--purple),var(--pink));
+  color:#fff;
+  border:none;
+  padding:10px 15px;
+  border-radius:10px;
+  font-size:1.4rem;
+  cursor:pointer;
+}
 
-import {
-  getAuth,
-  GoogleAuthProvider,
-  signInWithPopup,
-  signOut,
-  onAuthStateChanged
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
+/* COPY BUTTON */
+.copy-btn{
+  width:100%;
+  margin-top:15px;
+  padding:13px;
+  border:none;
+  border-radius:12px;
+  background:linear-gradient(90deg,var(--cyan),var(--purple));
+  color:#fff;
+  font-family:'Orbitron',sans-serif;
+  cursor:pointer;
+  transition:.3s;
+}
 
-import {
-  getFirestore,
-  doc,
-  setDoc,
-  collection,
-  addDoc,
-  serverTimestamp
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+.copy-btn:hover{
+  transform:translateY(-2px);
+  box-shadow:0 0 20px rgba(0,245,255,.35);
+}
 
+/* TOAST POPUP */
+.toast{
+  position:fixed;
+  bottom:25px;
+  right:25px;
+  max-width:320px;
+  background:linear-gradient(90deg,var(--purple),var(--pink));
+  color:#fff;
+  padding:16px 22px;
+  border-radius:16px;
+  font-size:.95rem;
+  z-index:10000;
+  box-shadow:0 0 25px rgba(255,0,200,.35);
+  animation:toastPop .25s ease;
+}
 
-// FIREBASE CONFIG
-const firebaseConfig = {
-  apiKey: "AIzaSyB7W0bvFnDfEUzuwuAIoGCwRakfFiTEt48",
-  authDomain: "savage-store-18507.firebaseapp.com",
-  databaseURL: "https://savage-store-18507-default-rtdb.firebaseio.com",
-  projectId: "savage-store-18507",
-  storageBucket: "savage-store-18507.firebasestorage.app",
-  messagingSenderId: "521961005705",
-  appId: "1:521961005705:web:216bf71293154e67c29c58",
-  measurementId: "G-86K4ZGMZQ4"
-};
-
-
-// INITIALIZE FIREBASE
-const app = initializeApp(firebaseConfig);
-
-const auth = getAuth(app);
-
-const db = getFirestore(app);
-
-const provider = new GoogleAuthProvider();
-
-
-// GLOBAL ORDER
-let currentOrder = {
-  item: "",
-  price: 0
-};
-
-
-// SCROLL FUNCTION
-window.scrollToSection = (id) => {
-
-  document.getElementById(id).scrollIntoView({
-    behavior: "smooth"
-  });
-};
-
-
-// GOOGLE LOGIN
-window.signInWithGoogle = async () => {
-
-  try {
-
-    const result =
-      await signInWithPopup(auth, provider);
-
-    const user = result.user;
-
-
-    // SAVE USER TO FIRESTORE
-    await setDoc(
-      doc(db, "users", user.uid),
-      {
-        uid: user.uid,
-        name: user.displayName,
-        email: user.email,
-        photo: user.photoURL,
-
-        createdAt: serverTimestamp()
-      },
-      { merge: true }
-    );
-
-
-    alert(`Welcome ${user.displayName} ⚡`);
-
-  } catch (err) {
-
-    console.log(err);
-
-    alert(err.message);
-  }
-};
-
-
-// LOGOUT
-window.logout = async () => {
-
-  try {
-
-    await signOut(auth);
-
-    alert("Logged out successfully ⚡");
-
-  } catch (err) {
-
-    console.log(err);
-
-    alert(err.message);
-  }
-};
-
-
-// AUTH STATE
-onAuthStateChanged(auth, async (user) => {
-
-  const storeLink =
-    document.getElementById("store-link");
-
-  const diamonds =
-    document.getElementById("diamonds");
-
-  const heroLoginBtn =
-    document.getElementById("hero-login-btn");
-
-  const navLoginBtn =
-    document.getElementById("nav-login-btn");
-
-
-  if (user) {
-
-    // SHOW STORE
-    storeLink.style.display = "inline-block";
-
-    // SHOW DIAMONDS
-    diamonds.classList.remove("hidden");
-
-    // HIDE HERO LOGIN BUTTON
-    heroLoginBtn.style.display = "none";
-
-    // CHANGE NAV BUTTON TO LOGOUT
-    navLoginBtn.innerHTML = "LOGOUT";
-
-    navLoginBtn.onclick = logout;
-
-  } else {
-
-    // HIDE STORE
-    storeLink.style.display = "none";
-
-    // HIDE DIAMONDS
-    diamonds.classList.add("hidden");
-
-    // SHOW HERO LOGIN
-    heroLoginBtn.style.display = "inline-block";
-
-    // CHANGE NAV BUTTON TO LOGIN
-    navLoginBtn.innerHTML = "LOGIN";
-
-    navLoginBtn.onclick = signInWithGoogle;
-  }
-});
-
-
-// OPEN ORDER MODAL
-window.openOrderModal = (item, price) => {
-
-  const user = auth.currentUser;
-
-  if (!user) {
-
-    alert("Please login first ⚡");
-
-    return;
+@keyframes toastPop{
+  from{
+    opacity:0;
+    transform:translateY(20px);
   }
 
-  currentOrder.item = item;
+  to{
+    opacity:1;
+    transform:translateY(0);
+  }
+}
 
-  currentOrder.price = price;
+/* BETTER MOBILE NAV */
+@media(max-width:650px){
 
-
-  document.getElementById("order-summary").innerHTML = `
-  
-    <strong>${item}</strong>
-    <br><br>
-
-    Price: ₦${price.toLocaleString()}
-  `;
-
-
-  document
-    .getElementById("order-modal")
-    .classList.remove("hidden");
-};
-
-
-// CLOSE MODAL
-window.closeModal = () => {
-
-  document
-    .getElementById("order-modal")
-    .classList.add("hidden");
-};
-
-
-// COMPLETE ORDER
-window.completeOrder = async () => {
-
-  const uid =
-    document.getElementById("uid")
-    .value
-    .trim();
-
-  const email =
-    document.getElementById("email")
-    .value
-    .trim();
-
-
-  if (!uid || !email) {
-
-    alert("Please fill all fields ⚡");
-
-    return;
+  header{
+    flex-direction:row;
+    align-items:center;
   }
 
-
-  const user = auth.currentUser;
-
-  if (!user) {
-
-    alert("Please login first ⚡");
-
-    return;
+  .menu-btn{
+    display:block;
   }
 
-
-  try {
-
-    // SAVE ORDER
-    await addDoc(collection(db, "orders"), {
-
-      userId: user.uid,
-
-      customerName: user.displayName,
-
-      customerEmail: user.email,
-
-      gameUID: uid,
-
-      item: currentOrder.item,
-
-      price: currentOrder.price,
-
-      status: "pending",
-
-      createdAt: serverTimestamp()
-    });
-
-
-    // WHATSAPP MESSAGE
-    const message = `
-
-SAVAGE STORE ORDER
-
-ITEM: ${currentOrder.item}
-PRICE: ₦${currentOrder.price}
-UID: ${uid}
-EMAIL: ${email}
-
-`;
-
-
-    // CHANGE NUMBER HERE
-    const whatsappURL =
-      `https://wa.me/234XXXXXXXXXX?text=${encodeURIComponent(message)}`;
-
-
-    // OPEN WHATSAPP
-    window.open(whatsappURL, "_blank");
-
-
-    // CLOSE MODAL
-    closeModal();
-
-
-    // CLEAR INPUTS
-    document.getElementById("uid").value = "";
-
-    document.getElementById("email").value = "";
-
-
-    alert("Order submitted successfully ⚡");
-
-
-  } catch (err) {
-
-    console.log(err);
-
-    alert(err.message);
+  nav{
+    display:none;
+    position:absolute;
+    top:90px;
+    left:6%;
+    right:6%;
+    background:rgba(0,0,0,.95);
+    border:1px solid rgba(255,255,255,.08);
+    border-radius:20px;
+    padding:20px;
+    flex-direction:column;
+    z-index:99;
   }
-};
 
-
-// ESC KEY CLOSE MODAL
-document.addEventListener("keydown", (e) => {
-
-  if (e.key === "Escape") {
-
-    closeModal();
+  nav.active{
+    display:flex;
   }
-});
 
-
-// HEADER EFFECT
-window.addEventListener("scroll", () => {
-
-  const header =
-    document.querySelector("header");
-
-
-  if (window.scrollY > 40) {
-
-    header.style.background =
-      "rgba(0,0,0,.85)";
-
-    header.style.backdropFilter =
-      "blur(10px)";
-
-  } else {
-
-    header.style.background =
-      "transparent";
-
-    header.style.backdropFilter =
-      "none";
+  nav a,
+  nav button{
+    width:100%;
+    text-align:center;
   }
-});
+
+  .toast{
+    left:20px;
+    right:20px;
+    bottom:20px;
+    max-width:none;
+  }
+}

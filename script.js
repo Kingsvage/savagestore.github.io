@@ -300,7 +300,7 @@ window.generateOrderId = () => {
 
 async function sendConfirmationEmail(orderData) {
   try {
-    await emailjs.send(
+    const result = await emailjs.send(
       emailServiceId,
       emailTemplateId,
       {
@@ -313,9 +313,16 @@ async function sendConfirmationEmail(orderData) {
       }
     );
 
-    console.log("Confirmation email sent.");
+    console.log("EMAILJS SUCCESS:", result);
+    alert("Confirmation email sent ✅");
+
   } catch (err) {
     console.error("EMAILJS ERROR:", err);
+
+    alert(
+      "Email failed:\n\n" +
+      JSON.stringify(err)
+    );
   }
 }
 

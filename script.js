@@ -48,12 +48,20 @@ provider.setCustomParameters({
   prompt: "select_account"
 });
 
+/* EMAILJS DETAILS */
+const emailServiceId = "service_3ut8kuo";
+const emailTemplateId = "template_jeabwaa";
+const emailPublicKey = "VGMXshIsMZlghPhDW";
+
+emailjs.init(emailPublicKey);
+
 let currentOrder = {
   item: "",
   price: 0
 };
 
 const whatsappNumber = "2347120004769";
+const accountNumber = "7071048081";
 
 const adminEmails = [
   "chukwumachidozie18@gmail.com"
@@ -186,7 +194,7 @@ async function loadAdminOrders() {
     });
   } catch (err) {
     console.error("LOAD ORDERS ERROR:", err);
-    ordersList.innerHTML = "<p>Could not load orders.</p>";
+    ordersList.innerHTML = "<p>Could not load orders. Check Firestore rules.</p>";
   }
 }
 
@@ -204,6 +212,8 @@ onAuthStateChanged(auth, (user) => {
   }
 
   if (user) {
+    const loggedInEmail = user.email.toLowerCase();
+
     storeLink.style.display = "inline-block";
     diamonds.classList.remove("hidden");
     heroLoginBtn.style.display = "none";
@@ -215,8 +225,9 @@ onAuthStateChanged(auth, (user) => {
       emailInput.value = user.email;
     }
 
-    if (adminDashboard && adminEmails.includes(user.email.toLowerCase())) {
+    if (adminDashboard && adminEmails.includes(loggedInEmail)) {
       adminDashboard.classList.remove("hidden");
+      showToast("Admin dashboard unlocked ✅");
       loadAdminOrders();
     } else if (adminDashboard) {
       adminDashboard.classList.add("hidden");
@@ -275,8 +286,6 @@ window.closeModal = () => {
 };
 
 window.copyAccountNumber = async () => {
-  const accountNumber = "7071048081";
-
   try {
     await navigator.clipboard.writeText(accountNumber);
     showToast("Account number copied ✅");
@@ -288,6 +297,31 @@ window.copyAccountNumber = async () => {
 window.generateOrderId = () => {
   return "SVG-" + Date.now().toString().slice(-8);
 };
+
+async function sendConfirmationEmail(orderData) {
+  try {
+    await emailjs.send(
+      emailServiceId,
+      emailTemplateId,
+      {
+        to_email: orderData.customerEmail,
+        customer_email: orderData.customerEmail,
+        email: orderData.customerEmail,
+        customer_name: orderData.customerName,
+        order_id: orderData.orderId,
+        item: orderData.item,
+        price: `₦${Number(orderData.price).toLocaleString()}`,
+        uid: orderData.gameUID,
+        payment_proof: orderData.paymentProof,
+        status: orderData.status
+      }
+    );
+
+    console.log("Confirmation email sent.");
+  } catch (err) {
+    console.error("EMAILJS ERROR:", err);
+  }
+}
 
 window.completeOrder = async () => {
   const uid = document.getElementById("uid").value.trim();
@@ -325,7 +359,7 @@ window.completeOrder = async () => {
 
     const proofURL = await getDownloadURL(proofRef);
 
-    await addDoc(collection(db, "orders"), {
+    const orderData = {
       orderId: orderId,
       userId: user.uid,
       customerName: user.displayName,
@@ -335,9 +369,15 @@ window.completeOrder = async () => {
       item: currentOrder.item,
       price: currentOrder.price,
       paymentProof: proofURL,
-      status: "pending",
+      status: "pending"
+    };
+
+    await addDoc(collection(db, "orders"), {
+      ...orderData,
       createdAt: serverTimestamp()
     });
+
+    await sendConfirmationEmail(orderData);
 
     const message = `
 SAVAGE STORE ORDER

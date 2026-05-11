@@ -14,8 +14,18 @@ import {
   setDoc,
   collection,
   addDoc,
+  getDocs,
+  query,
+  orderBy,
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
+
+import {
+  getStorage,
+  ref,
+  uploadBytes,
+  getDownloadURL
+} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
 
 const firebaseConfig = {
   apiKey: "AIzaSyB7W0bvFnDfEUzuwuAIoGCwRakfFiTEt48",
@@ -31,6 +41,7 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+const storage = getStorage(app);
 const provider = new GoogleAuthProvider();
 
 provider.setCustomParameters({
@@ -43,6 +54,10 @@ let currentOrder = {
 };
 
 const whatsappNumber = "2347120004769";
+
+const adminEmails = [
+  "chukwumachidozie18@gmail.com"
+];
 
 window.scrollToSection = (id) => {
   const section = document.getElementById(id);
@@ -125,12 +140,63 @@ window.logout = async () => {
   }
 };
 
+async function loadAdminOrders() {
+  const ordersList = document.getElementById("orders-list");
+
+  if (!ordersList) return;
+
+  ordersList.innerHTML = "<p>Loading orders...</p>";
+
+  try {
+    const ordersQuery = query(
+      collection(db, "orders"),
+      orderBy("createdAt", "desc")
+    );
+
+    const snapshot = await getDocs(ordersQuery);
+
+    if (snapshot.empty) {
+      ordersList.innerHTML = "<p>No orders yet.</p>";
+      return;
+    }
+
+    ordersList.innerHTML = "";
+
+    snapshot.forEach((docSnap) => {
+      const order = docSnap.data();
+
+      ordersList.innerHTML += `
+        <div class="order-card">
+          <h3>${order.orderId || "No Order ID"}</h3>
+
+          <p><strong>Name:</strong> ${order.customerName || "N/A"}</p>
+          <p><strong>Email:</strong> ${order.customerEmail || "N/A"}</p>
+          <p><strong>UID:</strong> ${order.gameUID || "N/A"}</p>
+          <p><strong>Item:</strong> ${order.item || "N/A"}</p>
+          <p><strong>Price:</strong> ₦${Number(order.price || 0).toLocaleString()}</p>
+          <p><strong>Status:</strong> ${order.status || "pending"}</p>
+
+          ${
+            order.paymentProof
+              ? `<a href="${order.paymentProof}" target="_blank" class="proof-btn">VIEW PAYMENT PROOF</a>`
+              : `<p>No payment proof uploaded.</p>`
+          }
+        </div>
+      `;
+    });
+  } catch (err) {
+    console.error("LOAD ORDERS ERROR:", err);
+    ordersList.innerHTML = "<p>Could not load orders.</p>";
+  }
+}
+
 onAuthStateChanged(auth, (user) => {
   const storeLink = document.getElementById("store-link");
   const diamonds = document.getElementById("diamonds");
   const heroLoginBtn = document.getElementById("hero-login-btn");
   const navLoginBtn = document.getElementById("nav-login-btn");
   const emailInput = document.getElementById("email");
+  const adminDashboard = document.getElementById("admin-dashboard");
 
   if (!storeLink || !diamonds || !heroLoginBtn || !navLoginBtn) {
     console.error("Some HTML elements are missing.");
@@ -149,6 +215,13 @@ onAuthStateChanged(auth, (user) => {
       emailInput.value = user.email;
     }
 
+    if (adminDashboard && adminEmails.includes(user.email)) {
+      adminDashboard.classList.remove("hidden");
+      loadAdminOrders();
+    } else if (adminDashboard) {
+      adminDashboard.classList.add("hidden");
+    }
+
     saveUser(user).catch((err) => {
       console.error("SAVE USER ERROR:", err);
     });
@@ -160,6 +233,10 @@ onAuthStateChanged(auth, (user) => {
 
     navLoginBtn.innerHTML = "LOGIN";
     navLoginBtn.onclick = signInWithGoogle;
+
+    if (adminDashboard) {
+      adminDashboard.classList.add("hidden");
+    }
   }
 });
 
@@ -215,9 +292,15 @@ window.generateOrderId = () => {
 window.completeOrder = async () => {
   const uid = document.getElementById("uid").value.trim();
   const email = document.getElementById("email").value.trim();
+  const proofFile = document.getElementById("payment-proof").files[0];
 
   if (!uid || !email) {
     alert("Please fill all fields ⚡");
+    return;
+  }
+
+  if (!proofFile) {
+    alert("Please upload payment proof ⚡");
     return;
   }
 
@@ -231,6 +314,17 @@ window.completeOrder = async () => {
   const orderId = generateOrderId();
 
   try {
+    showToast("Submitting order...");
+
+    const proofRef = ref(
+      storage,
+      `payment-proofs/${orderId}-${proofFile.name}`
+    );
+
+    await uploadBytes(proofRef, proofFile);
+
+    const proofURL = await getDownloadURL(proofRef);
+
     await addDoc(collection(db, "orders"), {
       orderId: orderId,
       userId: user.uid,
@@ -240,6 +334,7 @@ window.completeOrder = async () => {
       gameUID: uid,
       item: currentOrder.item,
       price: currentOrder.price,
+      paymentProof: proofURL,
       status: "pending",
       createdAt: serverTimestamp()
     });
@@ -253,6 +348,7 @@ PRICE: ₦${currentOrder.price.toLocaleString()}
 FREE FIRE UID: ${uid}
 EMAIL: ${email}
 GOOGLE ACCOUNT: ${user.email}
+PAYMENT PROOF: ${proofURL}
 
 I have made payment.
 `;
@@ -266,6 +362,7 @@ I have made payment.
 
     document.getElementById("uid").value = "";
     document.getElementById("email").value = user.email;
+    document.getElementById("payment-proof").value = "";
 
     showToast(`Order submitted successfully ⚡ Order ID: ${orderId}`);
   } catch (err) {

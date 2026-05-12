@@ -1,4 +1,3 @@
-alert("SCRIPT LOADED");
 import { initializeApp } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-app.js";
 
 import {
@@ -328,7 +327,6 @@ async function sendConfirmationEmail(orderData) {
 }
 
 window.completeOrder = async () => {
-  alert("Button is working");
   const uid = document.getElementById("uid").value.trim();
   const email = document.getElementById("email").value.trim();
 

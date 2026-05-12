@@ -331,17 +331,12 @@ window.completeOrder = async () => {
   alert("Button is working");
   const uid = document.getElementById("uid").value.trim();
   const email = document.getElementById("email").value.trim();
-  const proofFile = document.getElementById("payment-proof").files[0];
 
   if (!uid || !email) {
     alert("Please fill all fields ⚡");
     return;
   }
 
-  if (!proofFile) {
-    alert("Please upload payment proof ⚡");
-    return;
-  }
 
   const user = auth.currentUser;
 
@@ -355,15 +350,7 @@ window.completeOrder = async () => {
   try {
     showToast("Submitting order...");
 
-    const proofRef = ref(
-      storage,
-      `payment-proofs/${orderId}-${proofFile.name}`
-    );
-
-    await uploadBytes(proofRef, proofFile);
-
-    const proofURL = await getDownloadURL(proofRef);
-
+   
     const orderData = {
       orderId: orderId,
       userId: user.uid,
@@ -373,7 +360,7 @@ window.completeOrder = async () => {
       gameUID: uid,
       item: currentOrder.item,
       price: currentOrder.price,
-      paymentProof: proofURL,
+      paymentProof: "Customer will send proof on WhatsApp",
       status: "pending"
     };
 
@@ -393,7 +380,7 @@ PRICE: ₦${currentOrder.price.toLocaleString()}
 FREE FIRE UID: ${uid}
 EMAIL: ${email}
 GOOGLE ACCOUNT: ${user.email}
-PAYMENT PROOF: ${proofURL}
+PAYMENT PROOF: Customer will send screenshot on WhatsApp
 
 I have made payment.
 `;
@@ -407,7 +394,6 @@ I have made payment.
 
     document.getElementById("uid").value = "";
     document.getElementById("email").value = user.email;
-    document.getElementById("payment-proof").value = "";
 
     showToast(`Order submitted successfully ⚡ Order ID: ${orderId}`);
   } catch (err) {

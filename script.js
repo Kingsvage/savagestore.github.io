@@ -305,8 +305,16 @@ async function sendConfirmationEmail(orderData) {
       emailTemplateId,
       {
         to_email: orderData.customerEmail,
+        user_email: orderData.customerEmail,
+        email: orderData.customerEmail,
+        reply_to: orderData.customerEmail,
+
         to_name: orderData.customerName,
+        customer_name: orderData.customerName,
+
         order_item: orderData.item,
+        item: orderData.item,
+
         uid: orderData.gameUID,
         currency_symbol: "₦",
         price: Number(orderData.price).toLocaleString()
@@ -314,8 +322,6 @@ async function sendConfirmationEmail(orderData) {
     );
 
     console.log("EMAILJS SUCCESS:", result);
-    alert("Confirmation email sent ✅");
-
   } catch (err) {
     console.error("EMAILJS ERROR:", err);
 

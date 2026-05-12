@@ -205,137 +205,108 @@
     <div class="diamond-grid">
 
       <!-- CARD -->
-      <div class="diamond-card">
+<div class="diamond-grid">
+    <div class="badge">STARTER</div>
+    <img src="https://cdn-icons-png.flaticon.com/512/2583/2583344.png">
+    <h3>100 Diamonds</h3>
+    <p class="price">₦500</p>
+    <button onclick="openOrderModal('100 Diamonds',500)">
+      BUY NOW
+    </button>
+  </div>
 
-        <div class="badge">
-          BEST SELLER
-        </div>
+  <div class="diamond-card">
+    <img src="https://cdn-icons-png.flaticon.com/512/2583/2583344.png">
+    <h3>310 Diamonds</h3>
+    <p class="price">₦1,200</p>
+    <button onclick="openOrderModal('310 Diamonds',1200)">
+      BUY NOW
+    </button>
+  </div>
 
-        <img
-          src="https://cdn-icons-png.flaticon.com/512/2583/2583344.png"
-          alt="Diamond Icon"
-        >
+  <div class="diamond-card featured-card">
+    <div class="badge">MOST POPULAR</div>
+    <img src="https://cdn-icons-png.flaticon.com/512/2583/2583344.png">
+    <h3>520 Diamonds</h3>
+    <p class="price">₦2,000</p>
+    <button onclick="openOrderModal('520 Diamonds',2000)">
+      BUY NOW
+    </button>
+  </div>
 
-        <h3>100 Diamonds</h3>
+  <div class="diamond-card">
+    <img src="https://cdn-icons-png.flaticon.com/512/2583/2583344.png">
+    <h3>1060 Diamonds</h3>
+    <p class="price">₦4,000</p>
+    <button onclick="openOrderModal('1060 Diamonds',4000)">
+      BUY NOW
+    </button>
+  </div>
 
-        <p class="price">
-          ₦500
-        </p>
+  <div class="diamond-card">
+    <div class="badge purple">PREMIUM</div>
+    <img src="https://cdn-icons-png.flaticon.com/512/2583/2583344.png">
+    <h3>2180 Diamonds</h3>
+    <p class="price">₦8,000</p>
+    <button onclick="openOrderModal('2180 Diamonds',8000)">
+      BUY NOW
+    </button>
+  </div>
 
-        <button
-          type="button"
-          onclick="openOrderModal('100 Diamonds',500)"
-        >
-          BUY NOW
-        </button>
+  <div class="diamond-card">
+    <img src="https://cdn-icons-png.flaticon.com/512/2583/2583344.png">
+    <h3>5600 Diamonds</h3>
+    <p class="price">₦20,000</p>
+    <button onclick="openOrderModal('5600 Diamonds',20000)">
+      BUY NOW
+    </button>
+  </div>
 
-      </div>
+  <div class="diamond-card">
+    <div class="badge">ULTRA</div>
+    <img src="https://cdn-icons-png.flaticon.com/512/2583/2583344.png">
+    <h3>Weekly Membership</h3>
+    <p class="price">₦500</p>
+    <button onclick="openOrderModal('Weekly Membership',500)">
+      BUY NOW
+    </button>
+  </div>
 
+  <div class="diamond-card">
+    <div class="badge purple">VIP</div>
+    <img src="https://cdn-icons-png.flaticon.com/512/2583/2583344.png">
+    <h3>Monthly Membership</h3>
+    <p class="price">₦4,500</p>
+    <button onclick="openOrderModal('Monthly Membership',4500)">
+      BUY NOW
+    </button>
+  </div>
+      
+<div class="custom-diamond-box">
 
-      <!-- CARD -->
-      <div class="diamond-card">
+  <h3>Custom Diamond Request</h3>
 
-        <img
-          src="https://cdn-icons-png.flaticon.com/512/2583/2583344.png"
-          alt="Diamond Icon"
-        >
+  <p>
+    Want a custom amount of diamonds?
+    Enter the amount below.
+  </p>
 
-        <h3>310 Diamonds</h3>
+  <input
+    type="number"
+    id="custom-diamond-amount"
+    placeholder="Enter diamond amount"
+  >
 
-        <p class="price">
-          ₦1,200
-        </p>
+  <button
+    class="primary-btn"
+    onclick="submitCustomDiamond()"
+  >
+    REQUEST CUSTOM TOPUP ⚡
+  </button>
 
-        <button
-          type="button"
-          onclick="openOrderModal('310 Diamonds',1200)"
-        >
-          BUY NOW
-        </button>
-
-      </div>
-
-
-      <!-- FEATURED -->
-      <div class="diamond-card featured-card">
-
-        <div class="badge">
-          MOST POPULAR
-        </div>
-
-        <img
-          src="https://cdn-icons-png.flaticon.com/512/2583/2583344.png"
-          alt="Diamond Icon"
-        >
-
-        <h3>520 Diamonds</h3>
-
-        <p class="price">
-          ₦2,000
-        </p>
-
-        <button
-          type="button"
-          onclick="openOrderModal('520 Diamonds',2000)"
-        >
-          BUY NOW
-        </button>
-
-      </div>
-
-
-      <!-- CARD -->
-      <div class="diamond-card">
-
-        <img
-          src="https://cdn-icons-png.flaticon.com/512/2583/2583344.png"
-          alt="Diamond Icon"
-        >
-
-        <h3>1060 Diamonds</h3>
-
-        <p class="price">
-          ₦4,000
-        </p>
-
-        <button
-          type="button"
-          onclick="openOrderModal('1060 Diamonds',4000)"
-        >
-          BUY NOW
-        </button>
-
-      </div>
-
-
-      <!-- PREMIUM -->
-      <div class="diamond-card">
-
-        <div class="badge purple">
-          PREMIUM
-        </div>
-
-        <img
-          src="https://cdn-icons-png.flaticon.com/512/2583/2583344.png"
-          alt="Diamond Icon"
-        >
-
-        <h3>2180 Diamonds</h3>
-
-        <p class="price">
-          ₦8,000
-        </p>
-
-        <button
-          type="button"
-          onclick="openOrderModal('2180 Diamonds',8000)"
-        >
-          BUY NOW
-        </button>
-
-      </div>
-
-    </div>
+</div>
+      
+</div>
 
   </section>
 

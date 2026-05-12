@@ -953,3 +953,36 @@ input:focus{
     max-width:none;
   }
 }
+
+.custom-diamond-box{
+  margin-top:60px;
+  background:rgba(17,17,17,.9);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:28px;
+  padding:40px;
+  text-align:center;
+  box-shadow:
+  0 0 40px rgba(122,0,255,.25);
+}
+
+.custom-diamond-box h3{
+  font-size:2rem;
+  margin-bottom:15px;
+  font-family:'Orbitron',sans-serif;
+  color:var(--cyan);
+}
+
+.custom-diamond-box p{
+  color:var(--muted);
+  margin-bottom:25px;
+}
+
+.custom-diamond-box input{
+  max-width:420px;
+  margin:0 auto 20px;
+  display:block;
+}
+
+.custom-diamond-box button{
+  min-width:260px;
+}

@@ -414,13 +414,66 @@
     <h2>ORDER DASHBOARD</h2>
   </div>
 
-  <div id="orders-list" class="orders-list">
-    <p>Loading orders...</p>
+  <!-- ANALYTICS -->
+<div class="analytics-grid">
+
+  <div class="analytics-card">
+    <h3 id="total-orders">0</h3>
+    <p>Total Orders</p>
   </div>
+
+  <div class="analytics-card">
+    <h3 id="total-revenue">₦0</h3>
+    <p>Total Revenue</p>
+  </div>
+
+  <div class="analytics-card">
+    <h3 id="pending-orders">0</h3>
+    <p>Pending Orders</p>
+  </div>
+
+</div>
+
+<!-- FILTERS -->
+<div class="admin-controls">
+
+  <input
+    type="text"
+    id="search-orders"
+    placeholder="Search Order ID / Email / UID"
+  >
+
+  <select id="status-filter">
+    <option value="all">All Orders</option>
+    <option value="pending">Pending</option>
+    <option value="processing">Processing</option>
+    <option value="delivered">Delivered</option>
+    <option value="failed">Failed</option>
+  </select>
+
+</div>
+
+<!-- ORDERS -->
+<div id="orders-list" class="orders-list">
+  <p>Loading orders...</p>
+</div>
 
 </section>
 
+<!-- ORDER HISTORY -->
+<section class="history-section hidden" id="history-section">
 
+  <div class="section-title">
+    <span>MY ORDERS</span>
+    <h2>ORDER HISTORY</h2>
+  </div>
+
+  <div id="history-list" class="history-list">
+    <p>Loading your orders...</p>
+  </div>
+
+</section>
+  
   <!-- FOOTER -->
   <footer>
 

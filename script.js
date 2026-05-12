@@ -616,3 +616,23 @@ window.addEventListener("scroll", () => {
     header.style.backdropFilter = "none";
   }
 });
+window.submitCustomDiamond = () => {
+
+  const amount =
+    document.getElementById(
+      "custom-diamond-amount"
+    ).value;
+
+  if (!amount || amount <= 0) {
+    alert("Enter valid diamond amount ⚡");
+    return;
+  }
+
+  const estimatedPrice =
+    Math.round(amount * 4);
+
+  openOrderModal(
+    `${amount} Custom Diamonds`,
+    estimatedPrice
+  );
+};

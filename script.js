@@ -149,52 +149,228 @@ window.logout = async () => {
 };
 
 async function loadAdminOrders() {
-  const ordersList = document.getElementById("orders-list");
+
+  const ordersList =
+    document.getElementById("orders-list");
+
+  const searchInput =
+    document.getElementById("search-orders");
+
+  const statusFilter =
+    document.getElementById("status-filter");
 
   if (!ordersList) return;
 
-  ordersList.innerHTML = "<p>Loading orders...</p>";
-
   try {
+
     const ordersQuery = query(
       collection(db, "orders"),
       orderBy("createdAt", "desc")
     );
 
-    const snapshot = await getDocs(ordersQuery);
+    const snapshot =
+      await getDocs(ordersQuery);
 
-    if (snapshot.empty) {
-      ordersList.innerHTML = "<p>No orders yet.</p>";
+    let orders = [];
+
+    snapshot.forEach((docSnap) => {
+
+      orders.push({
+        id: docSnap.id,
+        ...docSnap.data()
+      });
+    });
+
+async function loadUserOrders(userId) {
+
+  const historySection =
+    document.getElementById("history-section");
+
+  const historyList =
+    document.getElementById("history-list");
+
+  if (!historySection || !historyList) return;
+
+  historySection.classList.remove("hidden");
+
+  try {
+
+    const ordersQuery = query(
+      collection(db, "orders"),
+      orderBy("createdAt", "desc")
+    );
+
+    const snapshot =
+      await getDocs(ordersQuery);
+
+    let userOrders = [];
+
+    snapshot.forEach((docSnap) => {
+
+      const order = docSnap.data();
+
+      if (order.userId === userId) {
+        userOrders.push(order);
+      }
+    });
+
+    if (!userOrders.length) {
+
+      historyList.innerHTML =
+        "<p>No orders yet.</p>";
+
       return;
     }
 
-    ordersList.innerHTML = "";
+    historyList.innerHTML = "";
 
-    snapshot.forEach((docSnap) => {
-      const order = docSnap.data();
+    userOrders.forEach((order) => {
 
-      ordersList.innerHTML += `
+      historyList.innerHTML += `
         <div class="order-card">
-          <h3>${order.orderId || "No Order ID"}</h3>
 
-          <p><strong>Name:</strong> ${order.customerName || "N/A"}</p>
-          <p><strong>Email:</strong> ${order.customerEmail || "N/A"}</p>
-          <p><strong>UID:</strong> ${order.gameUID || "N/A"}</p>
-          <p><strong>Item:</strong> ${order.item || "N/A"}</p>
-          <p><strong>Price:</strong> ₦${Number(order.price || 0).toLocaleString()}</p>
-          <p><strong>Status:</strong> ${order.status || "pending"}</p>
+          <h3>${order.orderId}</h3>
 
-          ${
-            order.paymentProof
-              ? `<a href="${order.paymentProof}" target="_blank" class="proof-btn">VIEW PAYMENT PROOF</a>`
-              : `<p>No payment proof uploaded.</p>`
-          }
+          <p><strong>Item:</strong>
+            ${order.item}
+          </p>
+
+          <p><strong>Price:</strong>
+            ₦${Number(order.price).toLocaleString()}
+          </p>
+
+          <p><strong>Status:</strong>
+            ${order.status}
+          </p>
+
         </div>
       `;
     });
+
   } catch (err) {
-    console.error("LOAD ORDERS ERROR:", err);
-    ordersList.innerHTML = "<p>Could not load orders. Check Firestore rules.</p>";
+
+    console.error(err);
+
+    historyList.innerHTML =
+      "<p>Could not load history.</p>";
+  }
+}
+    
+    // ANALYTICS
+    document.getElementById("total-orders").innerHTML =
+      orders.length;
+
+    const revenue =
+      orders.reduce((sum, order) =>
+        sum + Number(order.price || 0), 0);
+
+    document.getElementById("total-revenue").innerHTML =
+      `₦${revenue.toLocaleString()}`;
+
+    const pending =
+      orders.filter(order =>
+        order.status === "pending"
+      ).length;
+
+    document.getElementById("pending-orders").innerHTML =
+      pending;
+
+
+    function renderOrders() {
+
+      const search =
+        searchInput.value.toLowerCase();
+
+      const status =
+        statusFilter.value;
+
+      const filtered =
+        orders.filter(order => {
+
+          const matchesSearch =
+
+            (order.orderId || "")
+            .toLowerCase()
+            .includes(search)
+
+            ||
+
+            (order.customerEmail || "")
+            .toLowerCase()
+            .includes(search)
+
+            ||
+
+            (order.gameUID || "")
+            .toLowerCase()
+            .includes(search);
+
+          const matchesStatus =
+
+            status === "all"
+            ||
+
+            order.status === status;
+
+          return matchesSearch && matchesStatus;
+        });
+
+      if (!filtered.length) {
+
+        ordersList.innerHTML =
+          "<p>No matching orders.</p>";
+
+        return;
+      }
+
+      ordersList.innerHTML = "";
+
+      filtered.forEach((order) => {
+
+        ordersList.innerHTML += `
+          <div class="order-card">
+
+            <h3>${order.orderId}</h3>
+
+            <p><strong>Name:</strong> ${order.customerName}</p>
+
+            <p><strong>Email:</strong> ${order.customerEmail}</p>
+
+            <p><strong>UID:</strong> ${order.gameUID}</p>
+
+            <p><strong>Item:</strong> ${order.item}</p>
+
+            <p><strong>Price:</strong>
+              ₦${Number(order.price).toLocaleString()}
+            </p>
+
+            <p><strong>Status:</strong>
+              ${order.status}
+            </p>
+
+          </div>
+        `;
+      });
+    }
+
+    renderOrders();
+
+    searchInput.addEventListener(
+      "input",
+      renderOrders
+    );
+
+    statusFilter.addEventListener(
+      "change",
+      renderOrders
+    );
+
+  } catch (err) {
+
+    console.error(err);
+
+    ordersList.innerHTML =
+      "<p>Could not load orders.</p>";
   }
 }
 
@@ -234,6 +410,7 @@ onAuthStateChanged(auth, (user) => {
     }
 
     saveUser(user).catch((err) => {
+      loadUserOrders(user.uid);
       console.error("SAVE USER ERROR:", err);
     });
 

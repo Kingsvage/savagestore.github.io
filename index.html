@@ -11,7 +11,7 @@
     content="Savage Store - Instant Free Fire Diamond Top Up with fast delivery and secure payments."
   />
 
-  <link rel="icon" href="https://i.ibb.co/bMVsz0g1/SAVAGE-LOGO.png">
+  <link rel="icon" href="https://www.image2url.com/r2/default/images/1778679132528-369f040c-1b4c-4795-826e-514f59f2ec64.png">
 
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -21,7 +21,7 @@
     rel="stylesheet"
   >
 
-  <link rel="stylesheet" href="style.css?v=10">
+  <link rel="stylesheet" href="style.css?v=20">
 
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 </head>
@@ -37,25 +37,17 @@
 
       <div class="logo-wrap">
         <img
-          src="https://i.ibb.co/bMVsz0g1/SAVAGE-LOGO.png"
+          src="https://www.image2url.com/r2/default/images/1778679132528-369f040c-1b4c-4795-826e-514f59f2ec64.png"
           class="logo"
           alt="Savage Store Logo"
         >
       </div>
 
       <nav>
-
-        <a
-          href="#diamonds"
-          id="store-link"
-          style="display:none;"
-        >
-          Store
-        </a>
-
+        <a href="#diamonds" id="store-link" style="display:none;">Store</a>
         <a href="#features">Features</a>
-
         <a href="#reviews">Reviews</a>
+        <a href="#history-section" id="orders-link" style="display:none;">My Orders</a>
 
         <button
           type="button"
@@ -65,14 +57,12 @@
         >
           Login
         </button>
-
       </nav>
-    </header>
 
+    </header>
 
     <div class="hero-content">
 
-      <!-- LEFT -->
       <div class="hero-left">
 
         <span class="top-tag">
@@ -119,8 +109,6 @@
 
         </div>
 
-
-        <!-- STATS -->
         <div class="stats">
 
           <div>
@@ -142,14 +130,12 @@
 
       </div>
 
-
-      <!-- RIGHT -->
       <div class="hero-right">
 
         <div class="hero-card floating">
 
           <img
-            src="https://i.ibb.co/bMVsz0g1/SAVAGE-LOGO.png"
+            src="https://www.image2url.com/r2/default/images/1778679132528-369f040c-1b4c-4795-826e-514f59f2ec64.png"
             class="hero-card-logo"
             alt="Savage Store"
           >
@@ -178,7 +164,6 @@
 
   </section>
 
-
   <!-- LIVE BAR -->
   <section class="live-bar">
 
@@ -192,7 +177,6 @@
 
   </section>
 
-
   <!-- DIAMONDS -->
   <section class="diamonds-section hidden" id="diamonds">
 
@@ -201,116 +185,190 @@
       <h2>POPULAR DIAMOND PACKAGES</h2>
     </div>
 
-
     <div class="diamond-grid">
 
-      <!-- CARD -->
-<div class="diamond-grid">
-    <div class="badge">STARTER</div>
-    <img src="https://cdn-icons-png.flaticon.com/512/2583/2583344.png">
-    <h3>100 Diamonds</h3>
-    <p class="price">₦500</p>
-    <button onclick="openOrderModal('100 Diamonds',500)">
-      BUY NOW
-    </button>
-  </div>
+      <div class="diamond-card">
+        <div class="badge">STARTER</div>
 
-  <div class="diamond-card">
-    <img src="https://cdn-icons-png.flaticon.com/512/2583/2583344.png">
-    <h3>310 Diamonds</h3>
-    <p class="price">₦1,200</p>
-    <button onclick="openOrderModal('310 Diamonds',1200)">
-      BUY NOW
-    </button>
-  </div>
+        <img
+          src="https://cdn-icons-png.flaticon.com/512/2583/2583344.png"
+          alt="Diamond Icon"
+        >
 
-  <div class="diamond-card featured-card">
-    <div class="badge">MOST POPULAR</div>
-    <img src="https://cdn-icons-png.flaticon.com/512/2583/2583344.png">
-    <h3>520 Diamonds</h3>
-    <p class="price">₦2,000</p>
-    <button onclick="openOrderModal('520 Diamonds',2000)">
-      BUY NOW
-    </button>
-  </div>
+        <h3>100 Diamonds</h3>
 
-  <div class="diamond-card">
-    <img src="https://cdn-icons-png.flaticon.com/512/2583/2583344.png">
-    <h3>1060 Diamonds</h3>
-    <p class="price">₦4,000</p>
-    <button onclick="openOrderModal('1060 Diamonds',4000)">
-      BUY NOW
-    </button>
-  </div>
+        <p class="price">₦500</p>
 
-  <div class="diamond-card">
-    <div class="badge purple">PREMIUM</div>
-    <img src="https://cdn-icons-png.flaticon.com/512/2583/2583344.png">
-    <h3>2180 Diamonds</h3>
-    <p class="price">₦8,000</p>
-    <button onclick="openOrderModal('2180 Diamonds',8000)">
-      BUY NOW
-    </button>
-  </div>
+        <button
+          type="button"
+          onclick="openOrderModal('100 Diamonds',500)"
+        >
+          BUY NOW
+        </button>
+      </div>
 
-  <div class="diamond-card">
-    <img src="https://cdn-icons-png.flaticon.com/512/2583/2583344.png">
-    <h3>5600 Diamonds</h3>
-    <p class="price">₦20,000</p>
-    <button onclick="openOrderModal('5600 Diamonds',20000)">
-      BUY NOW
-    </button>
-  </div>
+      <div class="diamond-card">
+        <img
+          src="https://cdn-icons-png.flaticon.com/512/2583/2583344.png"
+          alt="Diamond Icon"
+        >
 
-  <div class="diamond-card">
-    <div class="badge">ULTRA</div>
-    <img src="https://cdn-icons-png.flaticon.com/512/2583/2583344.png">
-    <h3>Weekly Membership</h3>
-    <p class="price">₦500</p>
-    <button onclick="openOrderModal('Weekly Membership',500)">
-      BUY NOW
-    </button>
-  </div>
+        <h3>310 Diamonds</h3>
 
-  <div class="diamond-card">
-    <div class="badge purple">VIP</div>
-    <img src="https://cdn-icons-png.flaticon.com/512/2583/2583344.png">
-    <h3>Monthly Membership</h3>
-    <p class="price">₦4,500</p>
-    <button onclick="openOrderModal('Monthly Membership',4500)">
-      BUY NOW
-    </button>
-  </div>
-      
-<div class="custom-diamond-box">
+        <p class="price">₦1,200</p>
 
-  <h3>Custom Diamond Request</h3>
+        <button
+          type="button"
+          onclick="openOrderModal('310 Diamonds',1200)"
+        >
+          BUY NOW
+        </button>
+      </div>
 
-  <p>
-    Want a custom amount of diamonds?
-    Enter the amount below.
-  </p>
+      <div class="diamond-card featured-card">
+        <div class="badge">MOST POPULAR</div>
 
-  <input
-  type="number"
-  id="custom-diamond-amount"
-  placeholder="Enter diamond amount"
-  min="1"
->
+        <img
+          src="https://cdn-icons-png.flaticon.com/512/2583/2583344.png"
+          alt="Diamond Icon"
+        >
 
-  <button
-    class="primary-btn"
-    onclick="submitCustomDiamond()"
-  >
-    REQUEST CUSTOM TOPUP ⚡
-  </button>
+        <h3>520 Diamonds</h3>
 
-</div>
-      
-</div>
+        <p class="price">₦2,000</p>
+
+        <button
+          type="button"
+          onclick="openOrderModal('520 Diamonds',2000)"
+        >
+          BUY NOW
+        </button>
+      </div>
+
+      <div class="diamond-card">
+        <img
+          src="https://cdn-icons-png.flaticon.com/512/2583/2583344.png"
+          alt="Diamond Icon"
+        >
+
+        <h3>1060 Diamonds</h3>
+
+        <p class="price">₦4,000</p>
+
+        <button
+          type="button"
+          onclick="openOrderModal('1060 Diamonds',4000)"
+        >
+          BUY NOW
+        </button>
+      </div>
+
+      <div class="diamond-card">
+        <div class="badge purple">PREMIUM</div>
+
+        <img
+          src="https://cdn-icons-png.flaticon.com/512/2583/2583344.png"
+          alt="Diamond Icon"
+        >
+
+        <h3>2180 Diamonds</h3>
+
+        <p class="price">₦8,000</p>
+
+        <button
+          type="button"
+          onclick="openOrderModal('2180 Diamonds',8000)"
+        >
+          BUY NOW
+        </button>
+      </div>
+
+      <div class="diamond-card">
+        <img
+          src="https://cdn-icons-png.flaticon.com/512/2583/2583344.png"
+          alt="Diamond Icon"
+        >
+
+        <h3>5600 Diamonds</h3>
+
+        <p class="price">₦20,000</p>
+
+        <button
+          type="button"
+          onclick="openOrderModal('5600 Diamonds',20000)"
+        >
+          BUY NOW
+        </button>
+      </div>
+
+      <div class="diamond-card">
+        <div class="badge">ULTRA</div>
+
+        <img
+          src="https://cdn-icons-png.flaticon.com/512/2583/2583344.png"
+          alt="Diamond Icon"
+        >
+
+        <h3>Weekly Membership</h3>
+
+        <p class="price">₦500</p>
+
+        <button
+          type="button"
+          onclick="openOrderModal('Weekly Membership',500)"
+        >
+          BUY NOW
+        </button>
+      </div>
+
+      <div class="diamond-card">
+        <div class="badge purple">VIP</div>
+
+        <img
+          src="https://cdn-icons-png.flaticon.com/512/2583/2583344.png"
+          alt="Diamond Icon"
+        >
+
+        <h3>Monthly Membership</h3>
+
+        <p class="price">₦4,500</p>
+
+        <button
+          type="button"
+          onclick="openOrderModal('Monthly Membership',4500)"
+        >
+          BUY NOW
+        </button>
+      </div>
+
+      <div class="custom-diamond-box">
+
+        <h3>Custom Diamond Request</h3>
+
+        <p>
+          Want a custom amount of diamonds? Enter the amount below.
+        </p>
+
+        <input
+          type="number"
+          id="custom-diamond-amount"
+          placeholder="Enter diamond amount"
+          min="1"
+        >
+
+        <button
+          type="button"
+          class="primary-btn"
+          onclick="submitCustomDiamond()"
+        >
+          REQUEST CUSTOM TOPUP ⚡
+        </button>
+
+      </div>
+
+    </div>
 
   </section>
-
 
   <!-- FEATURES -->
   <section class="features-section" id="features">
@@ -319,7 +377,6 @@
       <span>WHY CHOOSE US?</span>
       <h2>SAVAGE STORE ADVANTAGES</h2>
     </div>
-
 
     <div class="features-grid">
 
@@ -347,7 +404,6 @@
 
   </section>
 
-
   <!-- REVIEWS -->
   <section class="reviews-section" id="reviews">
 
@@ -355,7 +411,6 @@
       <span>PLAYER REVIEWS</span>
       <h2>WHAT GAMERS SAY</h2>
     </div>
-
 
     <div class="reviews-grid">
 
@@ -378,79 +433,76 @@
 
   </section>
 
-<!-- ADMIN DASHBOARD -->
-<section class="admin-section hidden" id="admin-dashboard">
+  <!-- ADMIN DASHBOARD -->
+  <section class="admin-section hidden" id="admin-dashboard">
 
-  <div class="section-title">
-    <span>ADMIN</span>
-    <h2>ORDER DASHBOARD</h2>
-  </div>
+    <div class="section-title">
+      <span>ADMIN</span>
+      <h2>ORDER DASHBOARD</h2>
+    </div>
 
-  <!-- ANALYTICS -->
-<div class="analytics-grid">
+    <div class="analytics-grid">
 
-  <div class="analytics-card">
-    <h3 id="total-orders">0</h3>
-    <p>Total Orders</p>
-  </div>
+      <div class="analytics-card">
+        <h3 id="total-orders">0</h3>
+        <p>Total Orders</p>
+      </div>
 
-  <div class="analytics-card">
-    <h3 id="total-revenue">₦0</h3>
-    <p>Total Revenue</p>
-  </div>
+      <div class="analytics-card">
+        <h3 id="total-revenue">₦0</h3>
+        <p>Total Revenue</p>
+      </div>
 
-  <div class="analytics-card">
-    <h3 id="pending-orders">0</h3>
-    <p>Pending Orders</p>
-  </div>
+      <div class="analytics-card">
+        <h3 id="pending-orders">0</h3>
+        <p>Pending Orders</p>
+      </div>
 
-</div>
+    </div>
 
-<!-- FILTERS -->
-<div class="admin-controls">
+    <div class="admin-controls">
 
-  <input
-    type="text"
-    id="search-orders"
-    placeholder="Search Order ID / Email / UID"
-  >
+      <input
+        type="text"
+        id="search-orders"
+        placeholder="Search Order ID / Email / UID"
+      >
 
-  <select id="status-filter">
-    <option value="all">All Orders</option>
-    <option value="pending">Pending</option>
-    <option value="processing">Processing</option>
-    <option value="delivered">Delivered</option>
-    <option value="failed">Failed</option>
-  </select>
+      <select id="status-filter">
+        <option value="all">All Orders</option>
+        <option value="pending">Pending</option>
+        <option value="processing">Processing</option>
+        <option value="delivered">Delivered</option>
+        <option value="failed">Failed</option>
+      </select>
 
-</div>
+    </div>
 
-<!-- ORDERS -->
-<div id="orders-list" class="orders-list">
-  <p>Loading orders...</p>
-</div>
+    <div id="orders-list" class="orders-list">
+      <p>Loading orders...</p>
+    </div>
 
-</section>
+  </section>
 
-<!-- ORDER HISTORY -->
-<section class="history-section hidden" id="history-section">
+  <!-- ORDER HISTORY -->
+  <section class="history-section hidden" id="history-section">
 
-  <div class="section-title">
-    <span>MY ORDERS</span>
-    <h2>ORDER HISTORY</h2>
-  </div>
+    <div class="section-title">
+      <span>MY ORDERS</span>
+      <h2>ORDER HISTORY</h2>
+    </div>
 
-  <div id="history-list" class="history-list">
-    <p>Loading your orders...</p>
-  </div>
+    <div id="history-list" class="history-list">
+      <p>Loading your orders...</p>
+    </div>
 
-</section>
-  
+  </section>
+
   <!-- FOOTER -->
   <footer>
 
     <img
-      src="https://i.ibb.co/bMVsz0g1/SAVAGE-LOGO.png"
+      src="https://www.image2url.com/r2/default/images/1778679132528-369f040c-1b4c-4795-826e-514f59f2ec64.png"
       alt="Savage Store Logo"
     >
 
@@ -462,100 +514,88 @@
 
   </footer>
 
+  <!-- MODAL -->
+  <div class="modal hidden" id="order-modal">
 
-<!-- MODAL -->
-<div class="modal hidden" id="order-modal">
-
-  <div class="modal-box">
-
-    <button
-      type="button"
-      class="close-btn"
-      onclick="closeModal()"
-    >
-      ✕
-    </button>
-
-    <img
-      src="https://i.ibb.co/bMVsz0g1/SAVAGE-LOGO.png"
-      class="modal-logo"
-      alt="Savage Store Logo"
-    >
-
-    <h2>Complete Your Order</h2>
-
-    <div
-      class="summary-box"
-      id="order-summary"
-    ></div>
-
-    <input
-      type="text"
-      id="uid"
-      placeholder="Enter Free Fire UID"
-    >
-
-    <input
-      type="email"
-      id="email"
-      placeholder="Enter Email Address"
-    >
-
-    <label class="proof-label">
-      Upload Payment Proof
-    </label>
-
-    <input
-      type="file"
-      id="payment-proof"
-      accept="image/*"
-    >
-
-    <div class="payment-box">
-
-      <h3>Payment Details</h3>
-
-      <p>
-        <strong>Bank:</strong>
-        PALMPAY
-      </p>
-
-      <p>
-        <strong>Account:</strong>
-        <span id="account-number">707148081</span>
-      </p>
-
-      <p>
-        <strong>Name:</strong>
-        CHUKWUMA CHIDOZIE FRANCIS
-      </p>
+    <div class="modal-box">
 
       <button
         type="button"
-        class="copy-btn"
-        onclick="copyAccountNumber()"
+        class="close-btn"
+        onclick="closeModal()"
       >
-        COPY ACCOUNT NUMBER
+        ✕
+      </button>
+
+      <img
+        src="https://www.image2url.com/r2/default/images/1778679132528-369f040c-1b4c-4795-826e-514f59f2ec64.png"
+        class="modal-logo"
+        alt="Savage Store Logo"
+      >
+
+      <h2>Complete Your Order</h2>
+
+      <div
+        class="summary-box"
+        id="order-summary"
+      ></div>
+
+      <input
+        type="text"
+        id="uid"
+        placeholder="Enter Free Fire UID"
+      >
+
+      <input
+        type="email"
+        id="email"
+        placeholder="Enter Email Address"
+      >
+
+      <div class="payment-box">
+
+        <h3>Payment Details</h3>
+
+        <p>
+          <strong>Bank:</strong>
+          PALMPAY
+        </p>
+
+        <p>
+          <strong>Account:</strong>
+          <span id="account-number">7071048081</span>
+        </p>
+
+        <p>
+          <strong>Name:</strong>
+          CHUKWUMA CHIDOZIE FRANCIS
+        </p>
+
+        <button
+          type="button"
+          class="copy-btn"
+          onclick="copyAccountNumber()"
+        >
+          COPY ACCOUNT NUMBER
+        </button>
+
+      </div>
+
+      <button
+        type="button"
+        class="primary-btn full-btn"
+        onclick="completeOrder()"
+      >
+        I HAVE PAID ⚡
       </button>
 
     </div>
 
-    <button
-      type="button"
-      class="primary-btn full-btn"
-      onclick="completeOrder()"
-    >
-      I HAVE PAID ⚡
-    </button>
-
   </div>
 
-</div>
+  <div class="toast hidden" id="toast"></div>
 
-<div class="toast hidden" id="toast"></div>
+  <script type="module" src="./script.js?v=20"></script>
 
-<script type="module" src="./script.js?v=10"></script>
-
-  
 </body>
 </html>

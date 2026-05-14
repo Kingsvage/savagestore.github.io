@@ -20,13 +20,6 @@ import {
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-import {
-  getStorage,
-  ref,
-  uploadBytes,
-  getDownloadURL
-} from "https://www.gstatic.com/firebasejs/10.12.2/firebase-storage.js";
-
 const firebaseConfig = {
   apiKey: "AIzaSyB7W0bvFnDfEUzuwuAIoGCwRakfFiTEt48",
   authDomain: "savage-store-18507.firebaseapp.com",
@@ -41,7 +34,6 @@ const firebaseConfig = {
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
-const storage = getStorage(app);
 const provider = new GoogleAuthProvider();
 
 provider.setCustomParameters({
@@ -149,203 +141,100 @@ window.logout = async () => {
 };
 
 async function loadAdminOrders() {
-
-  const ordersList =
-    document.getElementById("orders-list");
-
-  const searchInput =
-    document.getElementById("search-orders");
-
-  const statusFilter =
-    document.getElementById("status-filter");
+  const ordersList = document.getElementById("orders-list");
+  const searchInput = document.getElementById("search-orders");
+  const statusFilter = document.getElementById("status-filter");
 
   if (!ordersList) return;
 
   try {
-
     const ordersQuery = query(
       collection(db, "orders"),
       orderBy("createdAt", "desc")
     );
 
-    const snapshot =
-      await getDocs(ordersQuery);
+    const snapshot = await getDocs(ordersQuery);
 
     let orders = [];
 
     snapshot.forEach((docSnap) => {
-
       orders.push({
         id: docSnap.id,
         ...docSnap.data()
       });
     });
 
-async function loadUserOrders(userId) {
+    const totalOrders = document.getElementById("total-orders");
+    const totalRevenue = document.getElementById("total-revenue");
+    const pendingOrders = document.getElementById("pending-orders");
 
-  const historySection =
-    document.getElementById("history-section");
-
-  const historyList =
-    document.getElementById("history-list");
-
-  if (!historySection || !historyList) return;
-
-  historySection.classList.remove("hidden");
-
-  try {
-
-    const ordersQuery = query(
-      collection(db, "orders"),
-      orderBy("createdAt", "desc")
-    );
-
-    const snapshot =
-      await getDocs(ordersQuery);
-
-    let userOrders = [];
-
-    snapshot.forEach((docSnap) => {
-
-      const order = docSnap.data();
-
-      if (order.userId === userId) {
-        userOrders.push(order);
-      }
-    });
-
-    if (!userOrders.length) {
-
-      historyList.innerHTML =
-        "<p>No orders yet.</p>";
-
-      return;
+    if (totalOrders) {
+      totalOrders.innerHTML = orders.length;
     }
 
-    historyList.innerHTML = "";
+    const revenue = orders.reduce((sum, order) => {
+      return sum + Number(order.price || 0);
+    }, 0);
 
-    userOrders.forEach((order) => {
+    if (totalRevenue) {
+      totalRevenue.innerHTML = `₦${revenue.toLocaleString()}`;
+    }
 
-      historyList.innerHTML += `
-        <div class="order-card">
+    const pending = orders.filter((order) => {
+      return order.status === "pending";
+    }).length;
 
-          <h3>${order.orderId}</h3>
-
-          <p><strong>Item:</strong>
-            ${order.item}
-          </p>
-
-          <p><strong>Price:</strong>
-            ₦${Number(order.price).toLocaleString()}
-          </p>
-
-          <p><strong>Status:</strong>
-            ${order.status}
-          </p>
-
-        </div>
-      `;
-    });
-
-  } catch (err) {
-
-    console.error(err);
-
-    historyList.innerHTML =
-      "<p>Could not load history.</p>";
-  }
-}
-    
-    // ANALYTICS
-    document.getElementById("total-orders").innerHTML =
-      orders.length;
-
-    const revenue =
-      orders.reduce((sum, order) =>
-        sum + Number(order.price || 0), 0);
-
-    document.getElementById("total-revenue").innerHTML =
-      `₦${revenue.toLocaleString()}`;
-
-    const pending =
-      orders.filter(order =>
-        order.status === "pending"
-      ).length;
-
-    document.getElementById("pending-orders").innerHTML =
-      pending;
-
+    if (pendingOrders) {
+      pendingOrders.innerHTML = pending;
+    }
 
     function renderOrders() {
+      const search = searchInput ? searchInput.value.toLowerCase() : "";
+      const status = statusFilter ? statusFilter.value : "all";
 
-      const search =
-        searchInput.value.toLowerCase();
+      const filtered = orders.filter((order) => {
+        const matchesSearch =
+          (order.orderId || "").toLowerCase().includes(search) ||
+          (order.customerEmail || "").toLowerCase().includes(search) ||
+          (order.gameUID || "").toLowerCase().includes(search);
 
-      const status =
-        statusFilter.value;
+        const matchesStatus =
+          status === "all" || order.status === status;
 
-      const filtered =
-        orders.filter(order => {
-
-          const matchesSearch =
-
-            (order.orderId || "")
-            .toLowerCase()
-            .includes(search)
-
-            ||
-
-            (order.customerEmail || "")
-            .toLowerCase()
-            .includes(search)
-
-            ||
-
-            (order.gameUID || "")
-            .toLowerCase()
-            .includes(search);
-
-          const matchesStatus =
-
-            status === "all"
-            ||
-
-            order.status === status;
-
-          return matchesSearch && matchesStatus;
-        });
+        return matchesSearch && matchesStatus;
+      });
 
       if (!filtered.length) {
-
-        ordersList.innerHTML =
-          "<p>No matching orders.</p>";
-
+        ordersList.innerHTML = "<p>No matching orders.</p>";
         return;
       }
 
       ordersList.innerHTML = "";
 
       filtered.forEach((order) => {
-
         ordersList.innerHTML += `
           <div class="order-card">
 
-            <h3>${order.orderId}</h3>
+            <h3>${order.orderId || "No Order ID"}</h3>
 
-            <p><strong>Name:</strong> ${order.customerName}</p>
+            <p><strong>Name:</strong> ${order.customerName || "N/A"}</p>
 
-            <p><strong>Email:</strong> ${order.customerEmail}</p>
+            <p><strong>Email:</strong> ${order.customerEmail || "N/A"}</p>
 
-            <p><strong>UID:</strong> ${order.gameUID}</p>
+            <p><strong>UID:</strong> ${order.gameUID || "N/A"}</p>
 
-            <p><strong>Item:</strong> ${order.item}</p>
+            <p><strong>Item:</strong> ${order.item || "N/A"}</p>
 
             <p><strong>Price:</strong>
-              ₦${Number(order.price).toLocaleString()}
+              ₦${Number(order.price || 0).toLocaleString()}
             </p>
 
             <p><strong>Status:</strong>
-              ${order.status}
+              ${order.status || "pending"}
+            </p>
+
+            <p><strong>Proof:</strong>
+              ${order.paymentProof || "Customer will send proof on WhatsApp"}
             </p>
 
           </div>
@@ -355,22 +244,78 @@ async function loadUserOrders(userId) {
 
     renderOrders();
 
-    searchInput.addEventListener(
-      "input",
-      renderOrders
-    );
+    if (searchInput) {
+      searchInput.addEventListener("input", renderOrders);
+    }
 
-    statusFilter.addEventListener(
-      "change",
-      renderOrders
-    );
+    if (statusFilter) {
+      statusFilter.addEventListener("change", renderOrders);
+    }
 
   } catch (err) {
+    console.error("LOAD ORDERS ERROR:", err);
+    ordersList.innerHTML = "<p>Could not load orders.</p>";
+  }
+}
 
-    console.error(err);
+async function loadUserOrders(userId) {
+  const historySection = document.getElementById("history-section");
+  const historyList = document.getElementById("history-list");
 
-    ordersList.innerHTML =
-      "<p>Could not load orders.</p>";
+  if (!historySection || !historyList) return;
+
+  historySection.classList.remove("hidden");
+
+  try {
+    const ordersQuery = query(
+      collection(db, "orders"),
+      orderBy("createdAt", "desc")
+    );
+
+    const snapshot = await getDocs(ordersQuery);
+
+    let userOrders = [];
+
+    snapshot.forEach((docSnap) => {
+      const order = docSnap.data();
+
+      if (order.userId === userId) {
+        userOrders.push(order);
+      }
+    });
+
+    if (!userOrders.length) {
+      historyList.innerHTML = "<p>No orders yet.</p>";
+      return;
+    }
+
+    historyList.innerHTML = "";
+
+    userOrders.forEach((order) => {
+      historyList.innerHTML += `
+        <div class="order-card">
+
+          <h3>${order.orderId || "No Order ID"}</h3>
+
+          <p><strong>Item:</strong>
+            ${order.item || "N/A"}
+          </p>
+
+          <p><strong>Price:</strong>
+            ₦${Number(order.price || 0).toLocaleString()}
+          </p>
+
+          <p><strong>Status:</strong>
+            ${order.status || "pending"}
+          </p>
+
+        </div>
+      `;
+    });
+
+  } catch (err) {
+    console.error("LOAD USER ORDERS ERROR:", err);
+    historyList.innerHTML = "<p>Could not load history.</p>";
   }
 }
 
@@ -381,6 +326,8 @@ onAuthStateChanged(auth, (user) => {
   const navLoginBtn = document.getElementById("nav-login-btn");
   const emailInput = document.getElementById("email");
   const adminDashboard = document.getElementById("admin-dashboard");
+  const ordersLink = document.getElementById("orders-link");
+  const historySection = document.getElementById("history-section");
 
   if (!storeLink || !diamonds || !heroLoginBtn || !navLoginBtn) {
     console.error("Some HTML elements are missing.");
@@ -394,12 +341,18 @@ onAuthStateChanged(auth, (user) => {
     diamonds.classList.remove("hidden");
     heroLoginBtn.style.display = "none";
 
+    if (ordersLink) {
+      ordersLink.style.display = "inline-block";
+    }
+
     navLoginBtn.innerHTML = "LOGOUT";
     navLoginBtn.onclick = logout;
 
     if (emailInput) {
       emailInput.value = user.email;
     }
+
+    loadUserOrders(user.uid);
 
     if (adminDashboard && adminEmails.includes(loggedInEmail)) {
       adminDashboard.classList.remove("hidden");
@@ -410,7 +363,6 @@ onAuthStateChanged(auth, (user) => {
     }
 
     saveUser(user).catch((err) => {
-      loadUserOrders(user.uid);
       console.error("SAVE USER ERROR:", err);
     });
 
@@ -418,6 +370,14 @@ onAuthStateChanged(auth, (user) => {
     storeLink.style.display = "none";
     diamonds.classList.add("hidden");
     heroLoginBtn.style.display = "inline-block";
+
+    if (ordersLink) {
+      ordersLink.style.display = "none";
+    }
+
+    if (historySection) {
+      historySection.classList.add("hidden");
+    }
 
     navLoginBtn.innerHTML = "LOGIN";
     navLoginBtn.onclick = signInWithGoogle;
@@ -518,7 +478,6 @@ window.completeOrder = async () => {
     return;
   }
 
-
   const user = auth.currentUser;
 
   if (!user) {
@@ -531,7 +490,6 @@ window.completeOrder = async () => {
   try {
     showToast("Submitting order...");
 
-   
     const orderData = {
       orderId: orderId,
       userId: user.uid,
@@ -577,6 +535,13 @@ I have made payment.
     document.getElementById("email").value = user.email;
 
     showToast(`Order submitted successfully ⚡ Order ID: ${orderId}`);
+
+    loadUserOrders(user.uid);
+
+    if (adminEmails.includes(user.email.toLowerCase())) {
+      loadAdminOrders();
+    }
+
   } catch (err) {
     console.error("ORDER ERROR:", err);
 
@@ -595,6 +560,22 @@ window.toggleMobileMenu = () => {
   if (nav) {
     nav.classList.toggle("active");
   }
+};
+
+window.submitCustomDiamond = () => {
+  const amount = document.getElementById("custom-diamond-amount").value;
+
+  if (!amount || Number(amount) <= 0) {
+    alert("Enter valid diamond amount ⚡");
+    return;
+  }
+
+  const estimatedPrice = Math.round(Number(amount) * 4);
+
+  openOrderModal(
+    `${amount} Custom Diamonds`,
+    estimatedPrice
+  );
 };
 
 document.addEventListener("keydown", (e) => {
@@ -616,23 +597,3 @@ window.addEventListener("scroll", () => {
     header.style.backdropFilter = "none";
   }
 });
-window.submitCustomDiamond = () => {
-
-  const amount =
-    document.getElementById(
-      "custom-diamond-amount"
-    ).value;
-
-  if (!amount || amount <= 0) {
-    alert("Enter valid diamond amount ⚡");
-    return;
-  }
-
-  const estimatedPrice =
-    Math.round(amount * 4);
-
-  openOrderModal(
-    `${amount} Custom Diamonds`,
-    estimatedPrice
-  );
-};

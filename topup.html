@@ -1,1 +1,411 @@
-1
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Savage Store | Free Fire Top Up</title>
+
+  <meta
+    name="description"
+    content="Buy Free Fire diamonds on Savage Store with secure payment and fast delivery."
+  />
+
+  <link rel="icon" href="https://www.image2url.com/r2/default/images/1778679132528-369f040c-1b4c-4795-826e-514f59f2ec64.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Poppins:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet"
+  >
+
+  <link rel="stylesheet" href="style.css?v=31">
+
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+</head>
+
+<body>
+
+  <section class="hero small-hero">
+
+    <div class="hero-overlay"></div>
+
+    <header>
+
+      <div class="logo-wrap">
+        <img
+          src="https://www.image2url.com/r2/default/images/1778679132528-369f040c-1b4c-4795-826e-514f59f2ec64.png"
+          class="logo"
+          alt="Savage Store Logo"
+        >
+      </div>
+
+      <nav>
+        <a href="index.html">Home</a>
+        <a href="topup.html">Top Up</a>
+        <a href="marketplace.html">Marketplace</a>
+        <a href="sell.html">Sell Account</a>
+        <a href="orders.html">My Orders</a>
+        <a href="admin.html">Admin</a>
+
+        <button
+          type="button"
+          class="nav-btn"
+          id="nav-login-btn"
+          onclick="signInWithGoogle()"
+        >
+          Login
+        </button>
+      </nav>
+
+    </header>
+
+    <div class="hero-content">
+
+      <div class="hero-left">
+
+        <span class="top-tag">
+          💎 FREE FIRE DIAMOND TOP UP
+        </span>
+
+        <h1>
+          TOP UP
+          <span>DIAMONDS</span>
+          <br>
+          FAST & SECURE
+        </h1>
+
+        <p>
+          Login to view diamond prices, enter your Free Fire UID, make payment, and receive order confirmation.
+        </p>
+
+        <div class="hero-buttons">
+
+          <button
+            type="button"
+            class="primary-btn"
+            id="hero-login-btn"
+            onclick="signInWithGoogle()"
+          >
+            LOGIN / SIGN UP ⚡
+          </button>
+
+          <button
+            type="button"
+            class="secondary-btn"
+            onclick="scrollToSection('diamonds')"
+          >
+            VIEW PACKAGES
+          </button>
+
+        </div>
+
+      </div>
+
+      <div class="hero-right">
+
+        <div class="hero-card floating">
+
+          <img
+            src="https://www.image2url.com/r2/default/images/1778679132528-369f040c-1b4c-4795-826e-514f59f2ec64.png"
+            class="hero-card-logo"
+            alt="Savage Store"
+          >
+
+          <h3>Secure Top Up</h3>
+
+          <p>Prices are available after login.</p>
+
+          <div class="price-box">
+            <span>Status</span>
+            <strong>Login Required</strong>
+          </div>
+
+          <button
+            type="button"
+            onclick="signInWithGoogle()"
+          >
+            GET STARTED
+          </button>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </section>
+
+  <section class="live-bar">
+    <div class="live-track">
+      🔥 Fast Free Fire top-up •
+      💎 UID payment narration required •
+      ⚡ Silent admin processing •
+      📩 Email confirmation enabled •
+      🎮 Savage Store gaming platform
+    </div>
+  </section>
+
+  <section class="diamonds-section hidden" id="diamonds">
+
+    <div class="section-title">
+      <span>TOP UP</span>
+      <h2>DIAMOND PACKAGES</h2>
+    </div>
+
+    <div class="login-required-box" id="login-required-box">
+      <h3>Login Required</h3>
+      <p>
+        Please login or sign up with Google to view diamond prices and place orders.
+      </p>
+
+      <button
+        type="button"
+        class="primary-btn"
+        onclick="signInWithGoogle()"
+      >
+        LOGIN / SIGN UP ⚡
+      </button>
+    </div>
+
+    <div class="diamond-grid hidden" id="diamond-grid">
+
+      <div class="diamond-card">
+        <div class="badge">STARTER</div>
+
+        <img
+          src="https://cdn-icons-png.flaticon.com/512/2583/2583344.png"
+          alt="Diamond Icon"
+        >
+
+        <h3>100 Diamonds</h3>
+
+        <p class="price">₦1,600</p>
+
+        <button
+          type="button"
+          onclick="openOrderModal('100 Diamonds',1600)"
+        >
+          BUY NOW
+        </button>
+      </div>
+
+      <div class="diamond-card">
+        <img
+          src="https://cdn-icons-png.flaticon.com/512/2583/2583344.png"
+          alt="Diamond Icon"
+        >
+
+        <h3>210 Diamonds</h3>
+
+        <p class="price">₦3,200</p>
+
+        <button
+          type="button"
+          onclick="openOrderModal('210 Diamonds',3200)"
+        >
+          BUY NOW
+        </button>
+      </div>
+
+      <div class="diamond-card featured-card">
+        <div class="badge">MOST POPULAR</div>
+
+        <img
+          src="https://cdn-icons-png.flaticon.com/512/2583/2583344.png"
+          alt="Diamond Icon"
+        >
+
+        <h3>530 Diamonds</h3>
+
+        <p class="price">₦7,900</p>
+
+        <button
+          type="button"
+          onclick="openOrderModal('530 Diamonds',7900)"
+        >
+          BUY NOW
+        </button>
+      </div>
+
+      <div class="diamond-card">
+        <img
+          src="https://cdn-icons-png.flaticon.com/512/2583/2583344.png"
+          alt="Diamond Icon"
+        >
+
+        <h3>1080 Diamonds</h3>
+
+        <p class="price">₦15,900</p>
+
+        <button
+          type="button"
+          onclick="openOrderModal('1080 Diamonds',15900)"
+        >
+          BUY NOW
+        </button>
+      </div>
+
+      <div class="diamond-card">
+        <div class="badge purple">PREMIUM</div>
+
+        <img
+          src="https://cdn-icons-png.flaticon.com/512/2583/2583344.png"
+          alt="Diamond Icon"
+        >
+
+        <h3>2200 Diamonds</h3>
+
+        <p class="price">₦31,500</p>
+
+        <button
+          type="button"
+          onclick="openOrderModal('2200 Diamonds',31500)"
+        >
+          BUY NOW
+        </button>
+      </div>
+
+      <div class="custom-diamond-box">
+
+        <h3>Custom Diamond Request</h3>
+
+        <p>
+          Enter the exact whole number of diamonds you want. Decimals are not allowed.
+        </p>
+
+        <input
+          type="number"
+          id="custom-diamond-amount"
+          placeholder="Enter diamond amount"
+          min="1"
+          step="1"
+        >
+
+        <button
+          type="button"
+          class="primary-btn"
+          onclick="submitCustomDiamond()"
+        >
+          REQUEST CUSTOM TOPUP ⚡
+        </button>
+
+      </div>
+
+    </div>
+
+  </section>
+
+  <footer>
+
+    <img
+      src="https://www.image2url.com/r2/default/images/1778679132528-369f040c-1b4c-4795-826e-514f59f2ec64.png"
+      alt="Savage Store Logo"
+    >
+
+    <p>Savage Store © 2026</p>
+
+    <span>
+      Free Fire Top Up • Fast Processing • Secure Orders
+    </span>
+
+  </footer>
+
+  <div class="modal hidden" id="order-modal">
+
+    <div class="modal-box">
+
+      <button
+        type="button"
+        class="close-btn"
+        onclick="closeModal()"
+      >
+        ✕
+      </button>
+
+      <img
+        src="https://www.image2url.com/r2/default/images/1778679132528-369f040c-1b4c-4795-826e-514f59f2ec64.png"
+        class="modal-logo"
+        alt="Savage Store Logo"
+      >
+
+      <h2>Complete Your Order</h2>
+
+      <div
+        class="summary-box"
+        id="order-summary"
+      ></div>
+
+      <input
+        type="text"
+        id="uid"
+        placeholder="Enter Free Fire UID"
+      >
+
+      <input
+        type="email"
+        id="email"
+        placeholder="Enter Email Address"
+      >
+
+      <div class="payment-box">
+
+        <h3>Payment Details</h3>
+
+        <p>
+          <strong>Bank:</strong>
+          PALMPAY
+        </p>
+
+        <p>
+          <strong>Account:</strong>
+          <span id="account-number">7071048081</span>
+        </p>
+
+        <p>
+          <strong>Name:</strong>
+          CHUKWUMA CHIDOZIE FRANCIS
+        </p>
+
+        <button
+          type="button"
+          class="copy-btn"
+          onclick="copyAccountNumber()"
+        >
+          COPY ACCOUNT NUMBER
+        </button>
+
+        <div class="payment-warning">
+          ⚠ IMPORTANT DISCLAIMER
+
+          <br><br>
+
+          You must use your exact Free Fire UID as the payment narration/description when making transfer.
+
+          <br><br>
+
+          Payments without matching UID narration may be ignored or delayed.
+        </div>
+
+      </div>
+
+      <button
+        type="button"
+        class="primary-btn full-btn"
+        onclick="completeOrder()"
+      >
+        I HAVE PAID ⚡
+      </button>
+
+    </div>
+
+  </div>
+
+  <div class="toast hidden" id="toast"></div>
+
+  <script type="module" src="./script.js?v=31"></script>
+
+</body>
+</html>

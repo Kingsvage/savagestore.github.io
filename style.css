@@ -1040,3 +1040,26 @@ input:focus{
   width:100%;
   min-width:unset;
 }
+/* MULTI PAGE HOMEPAGE FIXES */
+.page-btn{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  text-decoration:none;
+}
+
+.mini-link{
+  display:inline-block;
+  margin-top:18px;
+  color:var(--cyan);
+  text-decoration:none;
+  font-weight:600;
+}
+
+.mini-link:hover{
+  color:var(--pink);
+}
+
+.platform-section{
+  background:#080808;
+}

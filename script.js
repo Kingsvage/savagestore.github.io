@@ -367,6 +367,22 @@ onAuthStateChanged(auth, (user) => {
   const historySection = document.getElementById("history-section");
 
   if (user) {
+    const heroCardMessage = document.getElementById("hero-card-message");
+const heroCardStatus = document.getElementById("hero-card-status");
+const heroCardBtn = document.getElementById("hero-card-btn");
+
+if (heroCardMessage) {
+  heroCardMessage.innerHTML = "Diamond packages are unlocked.";
+}
+
+if (heroCardStatus) {
+  heroCardStatus.innerHTML = "Ready to Top Up";
+}
+
+if (heroCardBtn) {
+  heroCardBtn.innerHTML = "VIEW PACKAGES";
+  heroCardBtn.onclick = () => scrollToSection("diamonds");
+}
     const loggedInEmail = user.email.toLowerCase();
 
     if (storeLink) {
@@ -407,6 +423,22 @@ onAuthStateChanged(auth, (user) => {
     });
 
   } else {
+    const heroCardMessage = document.getElementById("hero-card-message");
+const heroCardStatus = document.getElementById("hero-card-status");
+const heroCardBtn = document.getElementById("hero-card-btn");
+
+if (heroCardMessage) {
+  heroCardMessage.innerHTML = "Login to unlock diamond packages.";
+}
+
+if (heroCardStatus) {
+  heroCardStatus.innerHTML = "Login Required";
+}
+
+if (heroCardBtn) {
+  heroCardBtn.innerHTML = "GET STARTED";
+  heroCardBtn.onclick = signInWithGoogle;
+}
     if (storeLink) {
       storeLink.style.display = "none";
     }

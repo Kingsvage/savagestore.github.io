@@ -5,7 +5,9 @@ import {
   GoogleAuthProvider,
   signInWithPopup,
   signOut,
-  onAuthStateChanged
+  onAuthStateChanged,
+  setPersistence,
+  browserLocalPersistence
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-auth.js";
 
 import {
@@ -36,11 +38,12 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
+setPersistence(auth, browserLocalPersistence);
+
 provider.setCustomParameters({
   prompt: "select_account"
 });
 
-/* EMAILJS DETAILS */
 const emailServiceId = "service_3ut8kuo";
 const emailTemplateId = "template_jeabwaa";
 const emailPublicKey = "VGMXshIsMZlghPhDW";
@@ -52,7 +55,6 @@ let currentOrder = {
   price: 0
 };
 
-const whatsappNumber = "2347120004769";
 const accountNumber = "7071048081";
 
 const adminEmails = [
@@ -234,7 +236,7 @@ async function loadAdminOrders() {
             </p>
 
             <p><strong>Proof:</strong>
-              ${order.paymentProof || "Customer will send proof on WhatsApp"}
+              ${order.paymentProof || "No proof required yet"}
             </p>
 
           </div>
@@ -319,9 +321,44 @@ async function loadUserOrders(userId) {
   }
 }
 
+function unlockTopupForUser(user) {
+  const diamonds = document.getElementById("diamonds");
+  const diamondGrid = document.getElementById("diamond-grid");
+  const loginRequiredBox = document.getElementById("login-required-box");
+
+  if (diamonds) {
+    diamonds.classList.remove("hidden");
+  }
+
+  if (diamondGrid) {
+    diamondGrid.classList.remove("hidden");
+  }
+
+  if (loginRequiredBox) {
+    loginRequiredBox.classList.add("hidden");
+  }
+}
+
+function lockTopupForGuest() {
+  const diamonds = document.getElementById("diamonds");
+  const diamondGrid = document.getElementById("diamond-grid");
+  const loginRequiredBox = document.getElementById("login-required-box");
+
+  if (diamonds) {
+    diamonds.classList.remove("hidden");
+  }
+
+  if (diamondGrid) {
+    diamondGrid.classList.add("hidden");
+  }
+
+  if (loginRequiredBox) {
+    loginRequiredBox.classList.remove("hidden");
+  }
+}
+
 onAuthStateChanged(auth, (user) => {
   const storeLink = document.getElementById("store-link");
-  const diamonds = document.getElementById("diamonds");
   const heroLoginBtn = document.getElementById("hero-login-btn");
   const navLoginBtn = document.getElementById("nav-login-btn");
   const emailInput = document.getElementById("email");
@@ -329,28 +366,31 @@ onAuthStateChanged(auth, (user) => {
   const ordersLink = document.getElementById("orders-link");
   const historySection = document.getElementById("history-section");
 
-  if (!storeLink || !diamonds || !heroLoginBtn || !navLoginBtn) {
-    console.error("Some HTML elements are missing.");
-    return;
-  }
-
   if (user) {
     const loggedInEmail = user.email.toLowerCase();
 
-    storeLink.style.display = "inline-block";
-    diamonds.classList.remove("hidden");
-    heroLoginBtn.style.display = "none";
+    if (storeLink) {
+      storeLink.style.display = "inline-block";
+    }
+
+    if (heroLoginBtn) {
+      heroLoginBtn.style.display = "none";
+    }
 
     if (ordersLink) {
       ordersLink.style.display = "inline-block";
     }
 
-    navLoginBtn.innerHTML = "LOGOUT";
-    navLoginBtn.onclick = logout;
+    if (navLoginBtn) {
+      navLoginBtn.innerHTML = "LOGOUT";
+      navLoginBtn.onclick = logout;
+    }
 
     if (emailInput) {
       emailInput.value = user.email;
     }
+
+    unlockTopupForUser(user);
 
     loadUserOrders(user.uid);
 
@@ -367,9 +407,13 @@ onAuthStateChanged(auth, (user) => {
     });
 
   } else {
-    storeLink.style.display = "none";
-    diamonds.classList.add("hidden");
-    heroLoginBtn.style.display = "inline-block";
+    if (storeLink) {
+      storeLink.style.display = "none";
+    }
+
+    if (heroLoginBtn) {
+      heroLoginBtn.style.display = "inline-block";
+    }
 
     if (ordersLink) {
       ordersLink.style.display = "none";
@@ -379,12 +423,16 @@ onAuthStateChanged(auth, (user) => {
       historySection.classList.add("hidden");
     }
 
-    navLoginBtn.innerHTML = "LOGIN";
-    navLoginBtn.onclick = signInWithGoogle;
+    if (navLoginBtn) {
+      navLoginBtn.innerHTML = "LOGIN";
+      navLoginBtn.onclick = signInWithGoogle;
+    }
 
     if (adminDashboard) {
       adminDashboard.classList.add("hidden");
     }
+
+    lockTopupForGuest();
   }
 });
 
@@ -399,11 +447,15 @@ window.openOrderModal = (item, price) => {
   currentOrder.item = item;
   currentOrder.price = price;
 
-  document.getElementById("order-summary").innerHTML = `
-    <strong>${item}</strong>
-    <br><br>
-    Price: ₦${price.toLocaleString()}
-  `;
+  const summary = document.getElementById("order-summary");
+
+  if (summary) {
+    summary.innerHTML = `
+      <strong>${item}</strong>
+      <br><br>
+      Price: ₦${price.toLocaleString()}
+    `;
+  }
 
   const emailInput = document.getElementById("email");
 
@@ -435,9 +487,9 @@ window.generateOrderId = () => {
   return "SVG-" + Date.now().toString().slice(-8);
 };
 
-async function sendConfirmationEmail(orderData) {
+async function sendCustomerConfirmationEmail(orderData) {
   try {
-    const result = await emailjs.send(
+    await emailjs.send(
       emailServiceId,
       emailTemplateId,
       {
@@ -457,15 +509,35 @@ async function sendConfirmationEmail(orderData) {
         price: Number(orderData.price).toLocaleString()
       }
     );
-
-    console.log("EMAILJS SUCCESS:", result);
   } catch (err) {
-    console.error("EMAILJS ERROR:", err);
+    console.error("CUSTOMER EMAIL ERROR:", err);
+  }
+}
 
-    alert(
-      "Email failed:\n\n" +
-      JSON.stringify(err)
+async function sendAdminOrderEmail(orderData) {
+  try {
+    await emailjs.send(
+      emailServiceId,
+      emailTemplateId,
+      {
+        to_email: adminEmails[0],
+        user_email: adminEmails[0],
+        email: adminEmails[0],
+        reply_to: orderData.customerEmail,
+
+        to_name: "Savage Store Admin",
+        customer_name: orderData.customerName,
+
+        order_item: `NEW ORDER: ${orderData.item}`,
+        item: orderData.item,
+
+        uid: orderData.gameUID,
+        currency_symbol: "₦",
+        price: Number(orderData.price).toLocaleString()
+      }
     );
+  } catch (err) {
+    console.error("ADMIN EMAIL ERROR:", err);
   }
 }
 
@@ -499,7 +571,7 @@ window.completeOrder = async () => {
       gameUID: uid,
       item: currentOrder.item,
       price: currentOrder.price,
-      paymentProof: "Customer will send proof on WhatsApp",
+      paymentProof: "Proof system not required yet",
       status: "pending"
     };
 
@@ -508,26 +580,9 @@ window.completeOrder = async () => {
       createdAt: serverTimestamp()
     });
 
-    await sendConfirmationEmail(orderData);
+    await sendCustomerConfirmationEmail(orderData);
 
-    const message = `
-SAVAGE STORE ORDER
-
-ORDER ID: ${orderId}
-ITEM: ${currentOrder.item}
-PRICE: ₦${currentOrder.price.toLocaleString()}
-FREE FIRE UID: ${uid}
-EMAIL: ${email}
-GOOGLE ACCOUNT: ${user.email}
-PAYMENT PROOF: Customer will send screenshot on WhatsApp
-
-I have made payment.
-`;
-
-    const whatsappURL =
-      `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
-
-    window.open(whatsappURL, "_blank");
+    await sendAdminOrderEmail(orderData);
 
     closeModal();
 
@@ -563,14 +618,27 @@ window.toggleMobileMenu = () => {
 };
 
 window.submitCustomDiamond = () => {
-  const amount = document.getElementById("custom-diamond-amount").value;
+  const amountInput = document.getElementById("custom-diamond-amount");
+  const rawAmount = amountInput.value.trim();
 
-  if (!amount || Number(amount) <= 0) {
-    alert("Enter valid diamond amount ⚡");
+  if (!rawAmount) {
+    alert("Enter diamond amount ⚡");
     return;
   }
 
-  const estimatedPrice = Math.round(Number(amount) * 4);
+  if (rawAmount.includes(".") || rawAmount.includes(",")) {
+    alert("Custom diamonds must be whole numbers only ⚡");
+    return;
+  }
+
+  const amount = Number(rawAmount);
+
+  if (!Number.isInteger(amount) || amount <= 0) {
+    alert("Enter valid whole number of diamonds ⚡");
+    return;
+  }
+
+  const estimatedPrice = Math.round(amount * 15);
 
   openOrderModal(
     `${amount} Custom Diamonds`,

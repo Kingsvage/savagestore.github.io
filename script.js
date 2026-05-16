@@ -431,6 +431,11 @@ if (heroCardBtn) {
     });
 
   } else {
+    const adminLink = document.getElementById("admin-link");
+
+if (adminLink) {
+  adminLink.style.display = "none";
+}
     const heroCardMessage = document.getElementById("hero-card-message");
 const heroCardStatus = document.getElementById("hero-card-status");
 const heroCardBtn = document.getElementById("hero-card-btn");

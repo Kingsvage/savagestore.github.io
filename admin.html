@@ -1,0 +1,182 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Savage Store | Admin Dashboard</title>
+
+  <link rel="icon" href="https://www.image2url.com/r2/default/images/1778679132528-369f040c-1b4c-4795-826e-514f59f2ec64.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Poppins:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet"
+  >
+
+  <link rel="stylesheet" href="style.css?v=40">
+
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+</head>
+
+<body>
+
+  <section class="hero small-hero">
+
+    <div class="hero-overlay"></div>
+
+    <header>
+
+      <div class="logo-wrap">
+        <img
+          src="https://www.image2url.com/r2/default/images/1778679132528-369f040c-1b4c-4795-826e-514f59f2ec64.png"
+          class="logo"
+          alt="Savage Store Logo"
+        >
+      </div>
+
+      <nav>
+        <a href="index.html">Home</a>
+        <a href="topup.html">Top Up</a>
+        <a href="marketplace.html">Marketplace</a>
+        <a href="sell.html">Sell Account</a>
+        <a href="orders.html">My Orders</a>
+
+        <a href="admin.html" id="admin-link" style="display:none;">
+          Admin
+        </a>
+
+        <button
+          type="button"
+          class="nav-btn"
+          id="nav-login-btn"
+          onclick="signInWithGoogle()"
+        >
+          Login
+        </button>
+      </nav>
+
+    </header>
+
+    <div class="hero-content">
+
+      <div class="hero-left">
+
+        <span class="top-tag">
+          🔐 ADMIN ACCESS
+        </span>
+
+        <h1>
+          SAVAGE STORE
+          <span>ADMIN</span>
+          <br>
+          DASHBOARD
+        </h1>
+
+        <p>
+          Manage top-up orders, monitor pending requests, and control customer order status.
+        </p>
+
+      </div>
+
+    </div>
+
+  </section>
+
+  <section class="admin-section hidden" id="admin-dashboard">
+
+    <div class="section-title">
+      <span>ADMIN PANEL</span>
+      <h2>ORDER MANAGEMENT</h2>
+    </div>
+
+    <div class="analytics-grid">
+
+      <div class="analytics-card">
+        <h3 id="total-orders">0</h3>
+        <p>Total Orders</p>
+      </div>
+
+      <div class="analytics-card">
+        <h3 id="total-revenue">₦0</h3>
+        <p>Total Revenue</p>
+      </div>
+
+      <div class="analytics-card">
+        <h3 id="pending-orders">0</h3>
+        <p>Pending Orders</p>
+      </div>
+
+    </div>
+
+    <div class="admin-controls">
+
+      <input
+        type="text"
+        id="search-orders"
+        placeholder="Search Order ID / Email / UID"
+      >
+
+      <select id="status-filter">
+        <option value="all">All Orders</option>
+        <option value="pending">Pending</option>
+        <option value="processing">Processing</option>
+        <option value="delivered">Delivered</option>
+        <option value="failed">Failed</option>
+      </select>
+
+    </div>
+
+    <div id="orders-list" class="orders-list">
+      <p>Loading orders...</p>
+    </div>
+
+  </section>
+
+  <section class="admin-section" id="admin-denied">
+
+    <div class="section-title">
+      <span>ACCESS DENIED</span>
+      <h2>ADMIN ONLY</h2>
+    </div>
+
+    <div class="login-required-box">
+      <h3>You are not allowed to view this page.</h3>
+      <p>
+        Please login with the official admin Gmail to access the dashboard.
+      </p>
+
+      <button
+        type="button"
+        class="primary-btn"
+        onclick="signInWithGoogle()"
+      >
+        LOGIN AS ADMIN ⚡
+      </button>
+    </div>
+
+  </section>
+
+  <footer>
+
+    <img
+      src="https://www.image2url.com/r2/default/images/1778679132528-369f040c-1b4c-4795-826e-514f59f2ec64.png"
+      alt="Savage Store Logo"
+    >
+
+    <p>Savage Store © 2026</p>
+
+    <span>
+      Admin Dashboard • Order Control • Secure Access
+    </span>
+
+  </footer>
+
+  <div class="toast hidden" id="toast"></div>
+
+  <script type="module" src="./script.js?v=40"></script>
+
+</body>
+</html>

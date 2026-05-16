@@ -367,6 +367,14 @@ onAuthStateChanged(auth, (user) => {
   const historySection = document.getElementById("history-section");
 
   if (user) {
+    const adminLink = document.getElementById("admin-link");
+
+if (
+  adminLink &&
+  adminEmails.includes(user.email.toLowerCase())
+) {
+  adminLink.style.display = "inline-block";
+}
     const heroCardMessage = document.getElementById("hero-card-message");
 const heroCardStatus = document.getElementById("hero-card-status");
 const heroCardBtn = document.getElementById("hero-card-btn");

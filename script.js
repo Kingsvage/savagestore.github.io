@@ -358,39 +358,25 @@ function lockTopupForGuest() {
 }
 
 onAuthStateChanged(auth, (user) => {
+
   const storeLink = document.getElementById("store-link");
   const heroLoginBtn = document.getElementById("hero-login-btn");
   const navLoginBtn = document.getElementById("nav-login-btn");
   const emailInput = document.getElementById("email");
+
   const adminDashboard = document.getElementById("admin-dashboard");
+  const adminDenied = document.getElementById("admin-denied");
+  const adminLink = document.getElementById("admin-link");
+
   const ordersLink = document.getElementById("orders-link");
   const historySection = document.getElementById("history-section");
 
+  const heroCardMessage = document.getElementById("hero-card-message");
+  const heroCardStatus = document.getElementById("hero-card-status");
+  const heroCardBtn = document.getElementById("hero-card-btn");
+
   if (user) {
-    const adminLink = document.getElementById("admin-link");
 
-if (
-  adminLink &&
-  adminEmails.includes(user.email.toLowerCase())
-) {
-  adminLink.style.display = "inline-block";
-}
-    const heroCardMessage = document.getElementById("hero-card-message");
-const heroCardStatus = document.getElementById("hero-card-status");
-const heroCardBtn = document.getElementById("hero-card-btn");
-
-if (heroCardMessage) {
-  heroCardMessage.innerHTML = "Diamond packages are unlocked.";
-}
-
-if (heroCardStatus) {
-  heroCardStatus.innerHTML = "Ready to Top Up";
-}
-
-if (heroCardBtn) {
-  heroCardBtn.innerHTML = "VIEW PACKAGES";
-  heroCardBtn.onclick = () => scrollToSection("diamonds");
-}
     const loggedInEmail = user.email.toLowerCase();
 
     if (storeLink) {
@@ -414,16 +400,59 @@ if (heroCardBtn) {
       emailInput.value = user.email;
     }
 
+    if (heroCardMessage) {
+      heroCardMessage.innerHTML =
+        "Diamond packages are unlocked.";
+    }
+
+    if (heroCardStatus) {
+      heroCardStatus.innerHTML =
+        "Ready to Top Up";
+    }
+
+    if (heroCardBtn) {
+      heroCardBtn.innerHTML =
+        "VIEW PACKAGES";
+
+      heroCardBtn.onclick = () =>
+        scrollToSection("diamonds");
+    }
+
     unlockTopupForUser(user);
 
     loadUserOrders(user.uid);
 
-    if (adminDashboard && adminEmails.includes(loggedInEmail)) {
+    if (
+      adminLink &&
+      adminEmails.includes(loggedInEmail)
+    ) {
+      adminLink.style.display = "inline-block";
+    }
+
+    if (
+      adminDashboard &&
+      adminEmails.includes(loggedInEmail)
+    ) {
+
       adminDashboard.classList.remove("hidden");
+
+      if (adminDenied) {
+        adminDenied.classList.add("hidden");
+      }
+
       showToast("Admin dashboard unlocked ✅");
+
       loadAdminOrders();
-    } else if (adminDashboard) {
-      adminDashboard.classList.add("hidden");
+
+    } else {
+
+      if (adminDashboard) {
+        adminDashboard.classList.add("hidden");
+      }
+
+      if (adminDenied) {
+        adminDenied.classList.remove("hidden");
+      }
     }
 
     saveUser(user).catch((err) => {
@@ -431,27 +460,7 @@ if (heroCardBtn) {
     });
 
   } else {
-    const adminLink = document.getElementById("admin-link");
 
-if (adminLink) {
-  adminLink.style.display = "none";
-}
-    const heroCardMessage = document.getElementById("hero-card-message");
-const heroCardStatus = document.getElementById("hero-card-status");
-const heroCardBtn = document.getElementById("hero-card-btn");
-
-if (heroCardMessage) {
-  heroCardMessage.innerHTML = "Login to unlock diamond packages.";
-}
-
-if (heroCardStatus) {
-  heroCardStatus.innerHTML = "Login Required";
-}
-
-if (heroCardBtn) {
-  heroCardBtn.innerHTML = "GET STARTED";
-  heroCardBtn.onclick = signInWithGoogle;
-}
     if (storeLink) {
       storeLink.style.display = "none";
     }
@@ -475,6 +484,32 @@ if (heroCardBtn) {
 
     if (adminDashboard) {
       adminDashboard.classList.add("hidden");
+    }
+
+    if (adminDenied) {
+      adminDenied.classList.remove("hidden");
+    }
+
+    if (adminLink) {
+      adminLink.style.display = "none";
+    }
+
+    if (heroCardMessage) {
+      heroCardMessage.innerHTML =
+        "Login to unlock diamond packages.";
+    }
+
+    if (heroCardStatus) {
+      heroCardStatus.innerHTML =
+        "Login Required";
+    }
+
+    if (heroCardBtn) {
+      heroCardBtn.innerHTML =
+        "GET STARTED";
+
+      heroCardBtn.onclick =
+        signInWithGoogle;
     }
 
     lockTopupForGuest();

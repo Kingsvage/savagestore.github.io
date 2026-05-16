@@ -14,6 +14,7 @@ import {
   getFirestore,
   doc,
   setDoc,
+  updateDoc,
   collection,
   addDoc,
   getDocs,
@@ -142,6 +143,87 @@ window.logout = async () => {
   }
 };
 
+async function sendCustomerConfirmationEmail(orderData) {
+  try {
+    await emailjs.send(
+      emailServiceId,
+      emailTemplateId,
+      {
+        to_email: orderData.customerEmail,
+        user_email: orderData.customerEmail,
+        email: orderData.customerEmail,
+        reply_to: orderData.customerEmail,
+
+        to_name: orderData.customerName,
+        customer_name: orderData.customerName,
+
+        order_item: orderData.item,
+        item: orderData.item,
+
+        uid: orderData.gameUID,
+        currency_symbol: "₦",
+        price: Number(orderData.price).toLocaleString()
+      }
+    );
+  } catch (err) {
+    console.error("CUSTOMER EMAIL ERROR:", err);
+  }
+}
+
+async function sendAdminOrderEmail(orderData) {
+  try {
+    await emailjs.send(
+      emailServiceId,
+      emailTemplateId,
+      {
+        to_email: adminEmails[0],
+        user_email: adminEmails[0],
+        email: adminEmails[0],
+        reply_to: orderData.customerEmail,
+
+        to_name: "Savage Store Admin",
+        customer_name: orderData.customerName,
+
+        order_item: `NEW ORDER: ${orderData.item}`,
+        item: orderData.item,
+
+        uid: orderData.gameUID,
+        currency_symbol: "₦",
+        price: Number(orderData.price).toLocaleString()
+      }
+    );
+  } catch (err) {
+    console.error("ADMIN EMAIL ERROR:", err);
+  }
+}
+
+async function sendDeliveredReceiptEmail(orderData) {
+  try {
+    await emailjs.send(
+      emailServiceId,
+      emailTemplateId,
+      {
+        to_email: orderData.customerEmail,
+        user_email: orderData.customerEmail,
+        email: orderData.customerEmail,
+        reply_to: adminEmails[0],
+
+        to_name: orderData.customerName,
+        customer_name: orderData.customerName,
+
+        order_item: `DELIVERED: ${orderData.item}`,
+        item: orderData.item,
+
+        uid: orderData.gameUID,
+        currency_symbol: "₦",
+        price: Number(orderData.price).toLocaleString()
+      }
+    );
+  } catch (err) {
+    console.error("DELIVERED EMAIL ERROR:", err);
+  }
+}
+
 async function loadAdminOrders() {
   const ordersList = document.getElementById("orders-list");
   const searchInput = document.getElementById("search-orders");
@@ -235,6 +317,16 @@ async function loadAdminOrders() {
               ${order.status || "pending"}
             </p>
 
+            <select
+              class="status-select"
+              onchange="updateOrderStatus('${order.id}', this.value)"
+            >
+              <option value="pending" ${order.status === "pending" ? "selected" : ""}>Pending</option>
+              <option value="processing" ${order.status === "processing" ? "selected" : ""}>Processing</option>
+              <option value="delivered" ${order.status === "delivered" ? "selected" : ""}>Delivered</option>
+              <option value="failed" ${order.status === "failed" ? "selected" : ""}>Failed</option>
+            </select>
+
             <p><strong>Proof:</strong>
               ${order.paymentProof || "No proof required yet"}
             </p>
@@ -259,6 +351,57 @@ async function loadAdminOrders() {
     ordersList.innerHTML = "<p>Could not load orders.</p>";
   }
 }
+
+window.updateOrderStatus = async (orderDocId, newStatus) => {
+  const user = auth.currentUser;
+
+  if (!user || !adminEmails.includes(user.email.toLowerCase())) {
+    alert("Admin access required.");
+    return;
+  }
+
+  try {
+    showToast("Updating order status...");
+
+    const orderRef = doc(db, "orders", orderDocId);
+
+    await updateDoc(orderRef, {
+      status: newStatus,
+      updatedAt: serverTimestamp()
+    });
+
+    showToast(`Order marked as ${newStatus} ✅`);
+
+    if (newStatus === "delivered") {
+      const ordersQuery = query(
+        collection(db, "orders"),
+        orderBy("createdAt", "desc")
+      );
+
+      const snapshot = await getDocs(ordersQuery);
+
+      snapshot.forEach((docSnap) => {
+        if (docSnap.id === orderDocId) {
+          sendDeliveredReceiptEmail(docSnap.data());
+        }
+      });
+
+      showToast("Delivered receipt sent ✅");
+    }
+
+    loadAdminOrders();
+
+  } catch (err) {
+    console.error("UPDATE STATUS ERROR:", err);
+
+    alert(
+      "Could not update status:\n\n" +
+      err.code +
+      "\n\n" +
+      err.message
+    );
+  }
+};
 
 async function loadUserOrders(userId) {
   const historySection = document.getElementById("history-section");
@@ -566,60 +709,6 @@ window.copyAccountNumber = async () => {
 window.generateOrderId = () => {
   return "SVG-" + Date.now().toString().slice(-8);
 };
-
-async function sendCustomerConfirmationEmail(orderData) {
-  try {
-    await emailjs.send(
-      emailServiceId,
-      emailTemplateId,
-      {
-        to_email: orderData.customerEmail,
-        user_email: orderData.customerEmail,
-        email: orderData.customerEmail,
-        reply_to: orderData.customerEmail,
-
-        to_name: orderData.customerName,
-        customer_name: orderData.customerName,
-
-        order_item: orderData.item,
-        item: orderData.item,
-
-        uid: orderData.gameUID,
-        currency_symbol: "₦",
-        price: Number(orderData.price).toLocaleString()
-      }
-    );
-  } catch (err) {
-    console.error("CUSTOMER EMAIL ERROR:", err);
-  }
-}
-
-async function sendAdminOrderEmail(orderData) {
-  try {
-    await emailjs.send(
-      emailServiceId,
-      emailTemplateId,
-      {
-        to_email: adminEmails[0],
-        user_email: adminEmails[0],
-        email: adminEmails[0],
-        reply_to: orderData.customerEmail,
-
-        to_name: "Savage Store Admin",
-        customer_name: orderData.customerName,
-
-        order_item: `NEW ORDER: ${orderData.item}`,
-        item: orderData.item,
-
-        uid: orderData.gameUID,
-        currency_symbol: "₦",
-        price: Number(orderData.price).toLocaleString()
-      }
-    );
-  } catch (err) {
-    console.error("ADMIN EMAIL ERROR:", err);
-  }
-}
 
 window.completeOrder = async () => {
   const uid = document.getElementById("uid").value.trim();

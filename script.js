@@ -265,7 +265,7 @@ async function loadAdminOrders() {
     }
 
     const pending = orders.filter((order) => {
-      return order.status === "pending";
+      return order.status === "processing";
     }).length;
 
     if (pendingOrders) {
@@ -321,7 +321,6 @@ async function loadAdminOrders() {
               class="status-select"
               onchange="updateOrderStatus('${order.id}', this.value)"
             >
-              <option value="pending" ${order.status === "pending" ? "selected" : ""}>Pending</option>
               <option value="processing" ${order.status === "processing" ? "selected" : ""}>Processing</option>
               <option value="delivered" ${order.status === "delivered" ? "selected" : ""}>Delivered</option>
               <option value="failed" ${order.status === "failed" ? "selected" : ""}>Failed</option>
@@ -741,7 +740,7 @@ window.completeOrder = async () => {
       item: currentOrder.item,
       price: currentOrder.price,
       paymentProof: "Proof system not required yet",
-      status: "pending"
+      status: "processing"
     };
 
     await addDoc(collection(db, "orders"), {

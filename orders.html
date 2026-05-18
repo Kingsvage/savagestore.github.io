@@ -1,0 +1,162 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Savage Store | My Orders</title>
+
+  <link rel="icon" href="https://www.image2url.com/r2/default/images/1778679132528-369f040c-1b4c-4795-826e-514f59f2ec64.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Poppins:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet"
+  >
+
+  <link rel="stylesheet" href="style.css?v=43">
+
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+</head>
+
+<body>
+
+  <section class="hero small-hero">
+
+    <div class="hero-overlay"></div>
+
+    <header>
+
+      <div class="logo-wrap">
+        <img
+          src="https://www.image2url.com/r2/default/images/1778679132528-369f040c-1b4c-4795-826e-514f59f2ec64.png"
+          class="logo"
+          alt="Savage Store Logo"
+        >
+      </div>
+
+      <nav>
+        <a href="index.html">Home</a>
+        <a href="topup.html">Top Up</a>
+        <a href="marketplace.html">Marketplace</a>
+        <a href="sell.html">Sell Account</a>
+        <a href="orders.html">My Orders</a>
+
+        <a href="admin.html" id="admin-link" style="display:none;">
+          Admin
+        </a>
+
+        <button
+          type="button"
+          class="nav-btn"
+          id="nav-login-btn"
+          onclick="signInWithGoogle()"
+        >
+          Login
+        </button>
+      </nav>
+
+    </header>
+
+    <div class="hero-content">
+
+      <div class="hero-left">
+
+        <span class="top-tag">
+          📦 CUSTOMER DASHBOARD
+        </span>
+
+        <h1>
+          TRACK YOUR
+          <span>ORDERS</span>
+          <br>
+          IN REAL TIME
+        </h1>
+
+        <p>
+          View your Free Fire top-up orders, payment status, delivery status, and order history.
+        </p>
+
+        <div class="hero-buttons">
+
+          <a href="topup.html" class="primary-btn page-btn">
+            BUY DIAMONDS ⚡
+          </a>
+
+          <button
+            type="button"
+            class="secondary-btn"
+            id="hero-login-btn"
+            onclick="signInWithGoogle()"
+          >
+            LOGIN / SIGN UP
+          </button>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </section>
+
+  <section class="history-section hidden" id="history-section">
+
+    <div class="section-title">
+      <span>MY ORDERS</span>
+      <h2>ORDER HISTORY</h2>
+    </div>
+
+    <div id="history-list" class="history-list">
+      <p>Loading your orders...</p>
+    </div>
+
+  </section>
+
+  <section class="history-section" id="orders-login-box">
+
+    <div class="section-title">
+      <span>LOGIN REQUIRED</span>
+      <h2>VIEW YOUR ORDERS</h2>
+    </div>
+
+    <div class="login-required-box">
+      <h3>Please login to view your order history.</h3>
+      <p>
+        Your orders are connected to your Google account.
+      </p>
+
+      <button
+        type="button"
+        class="primary-btn"
+        onclick="signInWithGoogle()"
+      >
+        LOGIN / SIGN UP ⚡
+      </button>
+    </div>
+
+  </section>
+
+  <footer>
+
+    <img
+      src="https://www.image2url.com/r2/default/images/1778679132528-369f040c-1b4c-4795-826e-514f59f2ec64.png"
+      alt="Savage Store Logo"
+    >
+
+    <p>Savage Store © 2026</p>
+
+    <span>
+      Orders • Tracking • Delivery Status
+    </span>
+
+  </footer>
+
+  <div class="toast hidden" id="toast"></div>
+
+  <script type="module" src="./script.js?v=43"></script>
+
+</body>
+</html>

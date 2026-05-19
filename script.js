@@ -518,7 +518,17 @@ onAuthStateChanged(auth, (user) => {
   const heroCardBtn = document.getElementById("hero-card-btn");
 
   if (user) {
+    
+const marketplaceGrid = document.getElementById("marketplace-grid");
+const marketplaceLoginBox = document.getElementById("marketplace-login-box");
 
+if (marketplaceGrid) {
+  marketplaceGrid.classList.remove("hidden");
+}
+
+if (marketplaceLoginBox) {
+  marketplaceLoginBox.classList.add("hidden");
+}
     const ordersLoginBox = document.getElementById("orders-login-box");
 
 if (ordersLoginBox) {
@@ -593,6 +603,16 @@ if (ordersLoginBox) {
 
     } else {
 
+      const marketplaceGrid = document.getElementById("marketplace-grid");
+const marketplaceLoginBox = document.getElementById("marketplace-login-box");
+
+if (marketplaceGrid) {
+  marketplaceGrid.classList.add("hidden");
+}
+
+if (marketplaceLoginBox) {
+  marketplaceLoginBox.classList.remove("hidden");
+}
       const ordersLoginBox = document.getElementById("orders-login-box");
 
 if (ordersLoginBox) {
@@ -843,3 +863,29 @@ window.addEventListener("scroll", () => {
     header.style.backdropFilter = "none";
   }
 });
+
+window.chatAdminForAccount = (accountName, price) => {
+  const user = auth.currentUser;
+
+  if (!user) {
+    alert("Please login first ⚡");
+    return;
+  }
+
+  const message = `
+SAVAGE STORE ACCOUNT REQUEST
+
+ACCOUNT: ${accountName}
+PRICE: ₦${Number(price).toLocaleString()}
+
+CUSTOMER NAME: ${user.displayName}
+CUSTOMER EMAIL: ${user.email}
+
+I want to buy this account. Please confirm availability.
+`;
+
+  const whatsappURL =
+    `https://wa.me/2347120004769?text=${encodeURIComponent(message)}`;
+
+  window.open(whatsappURL, "_blank");
+};

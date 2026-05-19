@@ -519,6 +519,11 @@ onAuthStateChanged(auth, (user) => {
 
   if (user) {
 
+    const ordersLoginBox = document.getElementById("orders-login-box");
+
+if (ordersLoginBox) {
+  ordersLoginBox.classList.add("hidden");
+}
     const loggedInEmail = user.email.toLowerCase();
 
     if (storeLink) {
@@ -588,6 +593,11 @@ onAuthStateChanged(auth, (user) => {
 
     } else {
 
+      const ordersLoginBox = document.getElementById("orders-login-box");
+
+if (ordersLoginBox) {
+  ordersLoginBox.classList.remove("hidden");
+}
       if (adminDashboard) {
         adminDashboard.classList.add("hidden");
       }

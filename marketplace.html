@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Savage Store | Marketplace</title>
+
+  <link rel="icon" href="https://www.image2url.com/r2/default/images/1778679132528-369f040c-1b4c-4795-826e-514f59f2ec64.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Poppins:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet"
+  >
+
+  <link rel="stylesheet" href="style.css?v=44">
+
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+</head>
+
+<body>
+
+  <section class="hero small-hero">
+
+    <div class="hero-overlay"></div>
+
+    <header>
+
+      <div class="logo-wrap">
+        <img
+          src="https://www.image2url.com/r2/default/images/1778679132528-369f040c-1b4c-4795-826e-514f59f2ec64.png"
+          class="logo"
+          alt="Savage Store Logo"
+        >
+      </div>
+
+      <nav>
+        <a href="index.html">Home</a>
+        <a href="topup.html">Top Up</a>
+        <a href="marketplace.html">Marketplace</a>
+        <a href="sell.html">Sell Account</a>
+        <a href="orders.html">My Orders</a>
+
+        <a href="admin.html" id="admin-link" style="display:none;">
+          Admin
+        </a>
+
+        <button
+          type="button"
+          class="nav-btn"
+          id="nav-login-btn"
+          onclick="signInWithGoogle()"
+        >
+          Login
+        </button>
+      </nav>
+
+    </header>
+
+    <div class="hero-content">
+
+      <div class="hero-left">
+
+        <span class="top-tag">
+          🎮 ACCOUNT MARKETPLACE
+        </span>
+
+        <h1>
+          BUY GAMING
+          <span>ACCOUNTS</span>
+          <br>
+          THROUGH ADMIN
+        </h1>
+
+        <p>
+          Browse approved account listings. To buy any account, chat Savage Store admin directly for verification and payment instructions.
+        </p>
+
+        <div class="hero-buttons">
+
+          <button
+            type="button"
+            class="primary-btn"
+            id="hero-login-btn"
+            onclick="signInWithGoogle()"
+          >
+            LOGIN / SIGN UP ⚡
+          </button>
+
+          <a href="sell.html" class="secondary-btn page-btn">
+            SELL ACCOUNT
+          </a>
+
+        </div>
+
+      </div>
+
+    </div>
+
+  </section>
+
+  <section class="features-section" id="marketplace-section">
+
+    <div class="section-title">
+      <span>MARKETPLACE</span>
+      <h2>AVAILABLE ACCOUNTS</h2>
+    </div>
+
+    <div class="login-required-box" id="marketplace-login-box">
+      <h3>Login Required</h3>
+      <p>
+        Please login or sign up to view account listings.
+      </p>
+
+      <button
+        type="button"
+        class="primary-btn"
+        onclick="signInWithGoogle()"
+      >
+        LOGIN / SIGN UP ⚡
+      </button>
+    </div>
+
+    <div class="marketplace-grid hidden" id="marketplace-grid">
+
+      <div class="market-card">
+        <div class="badge">VERIFIED</div>
+
+        <img
+          src="https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1200&auto=format&fit=crop"
+          alt="Free Fire Account"
+        >
+
+        <h3>Heroic Free Fire Account</h3>
+
+        <p>
+          Region: Nigeria • Level 60+ • Multiple skins • Strong ranked profile.
+        </p>
+
+        <h2>₦45,000</h2>
+
+        <button
+          type="button"
+          onclick="chatAdminForAccount('Heroic Free Fire Account',45000)"
+        >
+          CHAT ADMIN TO BUY
+        </button>
+      </div>
+
+      <div class="market-card">
+        <div class="badge purple">PREMIUM</div>
+
+        <img
+          src="https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=1200&auto=format&fit=crop"
+          alt="Free Fire Account"
+        >
+
+        <h3>Elite Skin Collection Account</h3>
+
+        <p>
+          Region: Nigeria • Rare bundles • Good UID • Suitable for serious players.
+        </p>
+
+        <h2>₦85,000</h2>
+
+        <button
+          type="button"
+          onclick="chatAdminForAccount('Elite Skin Collection Account',85000)"
+        >
+          CHAT ADMIN TO BUY
+        </button>
+      </div>
+
+    </div>
+
+  </section>
+
+  <footer>
+
+    <img
+      src="https://www.image2url.com/r2/default/images/1778679132528-369f040c-1b4c-4795-826e-514f59f2ec64.png"
+      alt="Savage Store Logo"
+    >
+
+    <p>Savage Store © 2026</p>
+
+    <span>
+      Marketplace • Verified Listings • Admin Purchase Flow
+    </span>
+
+  </footer>
+
+  <div class="toast hidden" id="toast"></div>
+
+  <script type="module" src="./script.js?v=44"></script>
+
+</body>
+</html>

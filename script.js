@@ -518,7 +518,17 @@ onAuthStateChanged(auth, (user) => {
   const heroCardBtn = document.getElementById("hero-card-btn");
 
   if (user) {
-    
+
+    const sellLoginBox = document.getElementById("sell-login-box");
+const sellerFormBox = document.getElementById("seller-form-box");
+
+if (sellLoginBox) {
+  sellLoginBox.classList.add("hidden");
+}
+
+if (sellerFormBox) {
+  sellerFormBox.classList.remove("hidden");
+}
 const marketplaceGrid = document.getElementById("marketplace-grid");
 const marketplaceLoginBox = document.getElementById("marketplace-login-box");
 
@@ -603,6 +613,16 @@ if (ordersLoginBox) {
 
     } else {
 
+      const sellLoginBox = document.getElementById("sell-login-box");
+const sellerFormBox = document.getElementById("seller-form-box");
+
+if (sellLoginBox) {
+  sellLoginBox.classList.remove("hidden");
+}
+
+if (sellerFormBox) {
+  sellerFormBox.classList.add("hidden");
+}
       const marketplaceGrid = document.getElementById("marketplace-grid");
 const marketplaceLoginBox = document.getElementById("marketplace-login-box");
 
@@ -888,4 +908,87 @@ I want to buy this account. Please confirm availability.
     `https://wa.me/2347120004769?text=${encodeURIComponent(message)}`;
 
   window.open(whatsappURL, "_blank");
+};
+
+window.submitAccountListing = async () => {
+  const user = auth.currentUser;
+
+  if (!user) {
+    alert("Please login first ⚡");
+    return;
+  }
+
+  const title = document.getElementById("seller-account-title").value.trim();
+  const region = document.getElementById("seller-region").value.trim();
+  const price = document.getElementById("seller-price").value.trim();
+  const level = document.getElementById("seller-level").value.trim();
+  const rank = document.getElementById("seller-rank").value.trim();
+  const description = document.getElementById("seller-description").value.trim();
+  const contact = document.getElementById("seller-contact").value.trim();
+
+  if (!title || !region || !price || !level || !rank || !description || !contact) {
+    alert("Please fill all seller fields ⚡");
+    return;
+  }
+
+  if (price.includes(".") || price.includes(",")) {
+    alert("Price must be a whole number only ⚡");
+    return;
+  }
+
+  try {
+    showToast("Submitting listing for review...");
+
+    await addDoc(collection(db, "listings"), {
+      sellerId: user.uid,
+      sellerName: user.displayName,
+      sellerEmail: user.email,
+      title,
+      region,
+      price: Number(price),
+      level,
+      rank,
+      description,
+      contact,
+      status: "pending-review",
+      createdAt: serverTimestamp()
+    });
+
+    await emailjs.send(
+      emailServiceId,
+      emailTemplateId,
+      {
+        to_email: adminEmails[0],
+        user_email: adminEmails[0],
+        email: adminEmails[0],
+        reply_to: user.email,
+        to_name: "Savage Store Admin",
+        customer_name: user.displayName,
+        order_item: `NEW ACCOUNT LISTING: ${title}`,
+        item: title,
+        uid: rank,
+        currency_symbol: "₦",
+        price: Number(price).toLocaleString()
+      }
+    );
+
+    document.getElementById("seller-account-title").value = "";
+    document.getElementById("seller-region").value = "";
+    document.getElementById("seller-price").value = "";
+    document.getElementById("seller-level").value = "";
+    document.getElementById("seller-rank").value = "";
+    document.getElementById("seller-description").value = "";
+    document.getElementById("seller-contact").value = "";
+
+    showToast("Listing submitted for admin review ✅");
+  } catch (err) {
+    console.error("LISTING SUBMIT ERROR:", err);
+
+    alert(
+      "Could not submit listing:\n\n" +
+      err.code +
+      "\n\n" +
+      err.message
+    );
+  }
 };

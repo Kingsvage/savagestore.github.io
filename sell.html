@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+
+  <title>Savage Store | Sell Account</title>
+
+  <link rel="icon" href="https://www.image2url.com/r2/default/images/1778679132528-369f040c-1b4c-4795-826e-514f59f2ec64.png">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+
+  <link
+    href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Poppins:wght@300;400;500;600;700&display=swap"
+    rel="stylesheet"
+  >
+
+  <link rel="stylesheet" href="style.css?v=46">
+
+  <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+</head>
+
+<body>
+
+  <section class="hero small-hero">
+
+    <div class="hero-overlay"></div>
+
+    <header>
+
+      <div class="logo-wrap">
+        <img
+          src="https://www.image2url.com/r2/default/images/1778679132528-369f040c-1b4c-4795-826e-514f59f2ec64.png"
+          class="logo"
+          alt="Savage Store Logo"
+        >
+      </div>
+
+      <nav>
+        <a href="index.html">Home</a>
+        <a href="topup.html">Top Up</a>
+        <a href="marketplace.html">Marketplace</a>
+        <a href="sell.html">Sell Account</a>
+        <a href="orders.html">My Orders</a>
+
+        <a href="admin.html" id="admin-link" style="display:none;">
+          Admin
+        </a>
+
+        <button
+          type="button"
+          class="nav-btn"
+          id="nav-login-btn"
+          onclick="signInWithGoogle()"
+        >
+          Login
+        </button>
+      </nav>
+
+    </header>
+
+    <div class="hero-content">
+
+      <div class="hero-left">
+
+        <span class="top-tag">
+          📤 SELL ACCOUNT
+        </span>
+
+        <h1>
+          SUBMIT YOUR
+          <span>ACCOUNT</span>
+          <br>
+          FOR REVIEW
+        </h1>
+
+        <p>
+          Submit your Free Fire account details. Savage Store admin will review your listing before it appears in the marketplace.
+        </p>
+
+      </div>
+
+    </div>
+
+  </section>
+
+  <section class="features-section" id="sell-section">
+
+    <div class="section-title">
+      <span>SELLER FORM</span>
+      <h2>ACCOUNT LISTING REQUEST</h2>
+    </div>
+
+    <div class="login-required-box" id="sell-login-box">
+      <h3>Login Required</h3>
+      <p>
+        Please login or sign up before submitting an account for sale.
+      </p>
+
+      <button
+        type="button"
+        class="primary-btn"
+        onclick="signInWithGoogle()"
+      >
+        LOGIN / SIGN UP ⚡
+      </button>
+    </div>
+
+    <div class="seller-form-box hidden" id="seller-form-box">
+
+      <input
+        type="text"
+        id="seller-account-title"
+        placeholder="Account title e.g Heroic Free Fire Account"
+      >
+
+      <input
+        type="text"
+        id="seller-region"
+        placeholder="Account region e.g Nigeria"
+      >
+
+      <input
+        type="number"
+        id="seller-price"
+        placeholder="Your selling price in ₦"
+        min="1"
+        step="1"
+      >
+
+      <input
+        type="text"
+        id="seller-level"
+        placeholder="Account level e.g Level 60"
+      >
+
+      <input
+        type="text"
+        id="seller-rank"
+        placeholder="Rank e.g Heroic / Grandmaster"
+      >
+
+      <textarea
+        id="seller-description"
+        placeholder="Describe account skins, bundles, weapons, pets, UID quality, etc."
+      ></textarea>
+
+      <input
+        type="text"
+        id="seller-contact"
+        placeholder="Your WhatsApp number"
+      >
+
+      <div class="payment-warning">
+        ⚠ IMPORTANT DISCLAIMER
+
+        <br><br>
+
+        Do not submit stolen, hacked, borrowed, or disputed accounts.
+
+        <br><br>
+
+        Savage Store may reject suspicious listings. You are responsible for the accuracy of the account details submitted.
+      </div>
+
+      <button
+        type="button"
+        class="primary-btn full-btn"
+        onclick="submitAccountListing()"
+      >
+        SUBMIT ACCOUNT FOR REVIEW ⚡
+      </button>
+
+    </div>
+
+  </section>
+
+  <footer>
+
+    <img
+      src="https://www.image2url.com/r2/default/images/1778679132528-369f040c-1b4c-4795-826e-514f59f2ec64.png"
+      alt="Savage Store Logo"
+    >
+
+    <p>Savage Store © 2026</p>
+
+    <span>
+      Seller Requests • Admin Approval • Marketplace Listings
+    </span>
+
+  </footer>
+
+  <div class="toast hidden" id="toast"></div>
+
+  <script type="module" src="./script.js?v=46"></script>
+
+</body>
+</html>

@@ -371,7 +371,7 @@ async function loadAdminOrders() {
     }
 
     async function loadAdminListings() {
-
+console.log("LOAD ADMIN LISTINGS STARTED");
   const listingsList =
     document.getElementById("listings-list");
 
@@ -386,6 +386,7 @@ async function loadAdminOrders() {
 
     const snapshot =
       await getDocs(listingsQuery);
+    console.log("LISTINGS COUNT:", snapshot.size);
 
     let listings = [];
 

@@ -370,6 +370,169 @@ async function loadAdminOrders() {
       });
     }
 
+    async function loadAdminListings() {
+
+  const listingsList =
+    document.getElementById("listings-list");
+
+  if (!listingsList) return;
+
+  try {
+
+    const listingsQuery = query(
+      collection(db, "listings"),
+      orderBy("createdAt", "desc")
+    );
+
+    const snapshot =
+      await getDocs(listingsQuery);
+
+    let listings = [];
+
+    snapshot.forEach((docSnap) => {
+
+      listings.push({
+        id: docSnap.id,
+        ...docSnap.data()
+      });
+
+    });
+
+    if (!listings.length) {
+
+      listingsList.innerHTML =
+        "<p>No listings found.</p>";
+
+      return;
+    }
+
+    listingsList.innerHTML = "";
+
+    listings.forEach((listing) => {
+
+      listingsList.innerHTML += `
+
+        <div class="order-card">
+
+          <h3>${listing.title}</h3>
+
+          <p>
+            <strong>Seller:</strong>
+            ${listing.sellerName}
+          </p>
+
+          <p>
+            <strong>Email:</strong>
+            ${listing.sellerEmail}
+          </p>
+
+          <p>
+            <strong>Region:</strong>
+            ${listing.region}
+          </p>
+
+          <p>
+            <strong>Rank:</strong>
+            ${listing.rank}
+          </p>
+
+          <p>
+            <strong>Level:</strong>
+            ${listing.level}
+          </p>
+
+          <p>
+            <strong>Price:</strong>
+            ₦${Number(listing.price).toLocaleString()}
+          </p>
+
+          <p>
+            <strong>Status:</strong>
+            ${listing.status}
+          </p>
+
+          <p>
+            ${listing.description}
+          </p>
+
+          <button
+            class="primary-btn"
+            onclick="approveListing('${listing.id}')"
+          >
+            APPROVE
+          </button>
+
+          <button
+            class="danger-btn"
+            onclick="rejectListing('${listing.id}')"
+          >
+            REJECT
+          </button>
+
+        </div>
+
+      `;
+
+    });
+
+  } catch (err) {
+
+    console.error(
+      "LOAD LISTINGS ERROR:",
+      err
+    );
+
+  }
+
+}
+
+    window.approveListing = async (listingId) => {
+
+  try {
+
+    await updateDoc(
+      doc(db, "listings", listingId),
+      {
+        status: "approved",
+        approvedAt: serverTimestamp()
+      }
+    );
+
+    showToast("Listing approved ✅");
+
+    loadAdminListings();
+
+  } catch (err) {
+
+    console.error(err);
+
+  }
+
+};
+
+    window.rejectListing = async (listingId) => {
+
+  try {
+
+    await updateDoc(
+      doc(db, "listings", listingId),
+      {
+        status: "rejected"
+      }
+    );
+
+    showToast("Listing rejected ❌");
+
+    loadAdminListings();
+
+  } catch (err) {
+
+    console.error(err);
+
+  }
+
+};
+    
     renderOrders();
 
     if (searchInput) {
@@ -629,6 +792,7 @@ onAuthStateChanged(auth, (user) => {
     if (isAdmin) {
       showToast("Admin dashboard unlocked ✅");
       loadAdminOrders();
+      loadAdminListings();
     }
 
     saveUser(user).catch((err) => {

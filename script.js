@@ -47,7 +47,7 @@ provider.setCustomParameters({
   prompt: "select_account"
 });
 
-const emailServiceId = "service_3ut8kuo";
+const emailServiceId = "service_oabtkuc";
 const emailTemplateId = "template_jeabwaa";
 const emailPublicKey = "VGMXshIsMZlghPhDW";
 

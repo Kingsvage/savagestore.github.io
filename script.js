@@ -46,6 +46,9 @@ let currentOrder = {
   price: 0
 };
 
+// Store all listings for filtering
+let allListings = [];
+
 function setText(element, value) {
   if (element) {
     element.textContent = value;
@@ -111,6 +114,139 @@ function createOrderCard(order, options = {}) {
   }
 
   return card;
+}
+
+// Create marketplace card for listings
+function createMarketplaceCard(listing, isFeatured = false) {
+  const card = document.createElement("div");
+  card.className = isFeatured ? "market-card featured" : "market-card";
+
+  // Badge
+  const badge = document.createElement("div");
+  badge.className = isFeatured ? "badge premium" : "badge";
+  badge.textContent = isFeatured ? "⭐ FEATURED" : "VERIFIED";
+  card.appendChild(badge);
+
+  // Placeholder image
+  const img = document.createElement("img");
+  img.src = "https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1200&auto=format&fit=crop";
+  img.alt = listing.title;
+  card.appendChild(img);
+
+  // Title
+  const title = document.createElement("h3");
+  title.textContent = listing.title;
+  card.appendChild(title);
+
+  // Description with listing details
+  const description = document.createElement("p");
+  description.textContent = `Region: ${listing.region} • Level ${listing.level} • Rank: ${listing.rank}`;
+  card.appendChild(description);
+
+  // Additional description
+  const details = document.createElement("p");
+  details.textContent = listing.description;
+  card.appendChild(details);
+
+  // Price
+  const price = document.createElement("h2");
+  price.textContent = `₦${Number(listing.price).toLocaleString()}`;
+  card.appendChild(price);
+
+  // Seller contact info
+  const sellerInfo = document.createElement("p");
+  sellerInfo.style.fontSize = "0.9em";
+  sellerInfo.style.color = "#888";
+  sellerInfo.textContent = `Seller: ${listing.sellerName}`;
+  card.appendChild(sellerInfo);
+
+  // Chat button
+  const button = document.createElement("button");
+  button.type = "button";
+  button.textContent = "CHAT ADMIN TO BUY";
+  button.addEventListener("click", () => {
+    chatAdminForAccount(listing.title, listing.price);
+  });
+  card.appendChild(button);
+
+  return card;
+}
+
+// Filter and render marketplace listings
+function renderMarketplaceListings() {
+  const searchTerm = document.getElementById("marketplace-search")?.value.toLowerCase() || "";
+  const regionFilter = document.getElementById("region-filter")?.value || "";
+  const priceFilter = document.getElementById("price-filter")?.value || "";
+  const levelFilter = document.getElementById("level-filter")?.value || "";
+
+  // Filter listings based on search and filters
+  const filtered = allListings.filter((listing) => {
+    const matchesSearch =
+      !searchTerm ||
+      listing.title.toLowerCase().includes(searchTerm) ||
+      listing.sellerName.toLowerCase().includes(searchTerm) ||
+      listing.region.toLowerCase().includes(searchTerm) ||
+      listing.description.toLowerCase().includes(searchTerm);
+
+    const matchesRegion = !regionFilter || listing.region === regionFilter;
+
+    const matchesLevel = !levelFilter || isLevelInRange(Number(listing.level), levelFilter);
+
+    const matchesPrice = !priceFilter || isPriceInRange(Number(listing.price), priceFilter);
+
+    return matchesSearch && matchesRegion && matchesLevel && matchesPrice;
+  });
+
+  // Separate featured (expensive) from regular listings
+  const featured = filtered.filter(l => Number(l.price) >= 100000).slice(0, 3);
+  const regular = filtered;
+
+  // Render featured section
+  const featuredGrid = document.getElementById("featured-grid");
+  if (featuredGrid) {
+    featuredGrid.replaceChildren();
+
+    if (featured.length > 0) {
+      featured.forEach((listing) => {
+        featuredGrid.appendChild(createMarketplaceCard(listing, true));
+      });
+    } else {
+      const emptyMsg = document.createElement("p");
+      emptyMsg.textContent = "No featured listings match your search.";
+      featuredGrid.appendChild(emptyMsg);
+    }
+  }
+
+  // Render all listings
+  const marketplaceGrid = document.getElementById("marketplace-grid");
+  if (marketplaceGrid) {
+    marketplaceGrid.replaceChildren();
+
+    if (!filtered.length) {
+      const emptyMsg = document.createElement("p");
+      emptyMsg.textContent = "No listings match your search criteria.";
+      marketplaceGrid.appendChild(emptyMsg);
+      return;
+    }
+
+    filtered.forEach((listing) => {
+      marketplaceGrid.appendChild(createMarketplaceCard(listing, false));
+    });
+  }
+}
+
+// Helper function to check if level is in range
+function isLevelInRange(level, range) {
+  const [min, max] = range.split("-").map(Number);
+  return level >= min && (max ? level <= max : true);
+}
+
+// Helper function to check if price is in range
+function isPriceInRange(price, range) {
+  if (range === "500000") return price >= 500000;
+
+  const [min, max] = range.split("-").map(Number);
+  return price >= min && price <= max;
 }
 
 window.scrollToSection = (id) => {
@@ -278,97 +414,46 @@ async function sendDeliveredReceiptEmail(orderData) {
   }
 }
 
-// NEW: Load approved marketplace listings with real-time updates
+// Load approved marketplace listings with real-time updates AND search/filter support
 function loadMarketplaceListings() {
   const marketplaceGrid = document.getElementById("marketplace-grid");
+  const marketplaceControls = document.getElementById("marketplace-controls");
 
   if (!marketplaceGrid) return;
 
   try {
-    // Query for approved listings only, ordered by newest first
     const listingsQuery = query(
       collection(db, "listings"),
       where("status", "==", "approved"),
       orderBy("approvedAt", "desc")
     );
 
-    // Use onSnapshot for real-time updates
     const unsubscribe = onSnapshot(listingsQuery, (snapshot) => {
       console.log("MARKETPLACE LISTINGS UPDATED:", snapshot.size);
 
-      let listings = [];
+      allListings = [];
 
       snapshot.forEach((docSnap) => {
-        listings.push({
+        allListings.push({
           id: docSnap.id,
           ...docSnap.data()
         });
       });
 
-      marketplaceGrid.replaceChildren();
-
-      if (!listings.length) {
-        const emptyMsg = document.createElement("p");
-        emptyMsg.textContent = "No approved listings available at this time.";
-        marketplaceGrid.appendChild(emptyMsg);
-        return;
+      // Show controls and sections
+      if (marketplaceControls) {
+        marketplaceControls.classList.remove("hidden");
+      }
+      const featuredSection = document.getElementById("featured-section");
+      if (featuredSection) {
+        featuredSection.classList.remove("hidden");
+      }
+      if (marketplaceGrid) {
+        marketplaceGrid.classList.remove("hidden");
       }
 
-      // Create market cards for each approved listing
-      listings.forEach((listing) => {
-        const card = document.createElement("div");
-        card.className = "market-card";
-
-        // Badge
-        const badge = document.createElement("div");
-        badge.className = "badge";
-        badge.textContent = "VERIFIED";
-        card.appendChild(badge);
-
-        // Placeholder image
-        const img = document.createElement("img");
-        img.src = "https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1200&auto=format&fit=crop";
-        img.alt = listing.title;
-        card.appendChild(img);
-
-        // Title
-        const title = document.createElement("h3");
-        title.textContent = listing.title;
-        card.appendChild(title);
-
-        // Description with listing details
-        const description = document.createElement("p");
-        description.textContent = `Region: ${listing.region} • Level ${listing.level} • Rank: ${listing.rank}`;
-        card.appendChild(description);
-
-        // Additional description
-        const details = document.createElement("p");
-        details.textContent = listing.description;
-        card.appendChild(details);
-
-        // Price
-        const price = document.createElement("h2");
-        price.textContent = `₦${Number(listing.price).toLocaleString()}`;
-        card.appendChild(price);
-
-        // Seller contact info (optional)
-        const sellerInfo = document.createElement("p");
-        sellerInfo.style.fontSize = "0.9em";
-        sellerInfo.style.color = "#888";
-        sellerInfo.textContent = `Seller: ${listing.sellerName}`;
-        card.appendChild(sellerInfo);
-
-        // Chat button
-        const button = document.createElement("button");
-        button.type = "button";
-        button.textContent = "CHAT ADMIN TO BUY";
-        button.addEventListener("click", () => {
-          chatAdminForAccount(listing.title, listing.price);
-        });
-        card.appendChild(button);
-
-        marketplaceGrid.appendChild(card);
-      });
+      // Initial render
+      renderMarketplaceListings();
 
     }, (error) => {
       console.error("MARKETPLACE LISTENER ERROR:", error);
@@ -378,7 +463,39 @@ function loadMarketplaceListings() {
       marketplaceGrid.appendChild(errorMsg);
     });
 
-    // Return unsubscribe function for cleanup if needed
+    // Set up search and filter event listeners
+    const searchInput = document.getElementById("marketplace-search");
+    if (searchInput) {
+      searchInput.addEventListener("input", renderMarketplaceListings);
+    }
+
+    const regionFilter = document.getElementById("region-filter");
+    if (regionFilter) {
+      regionFilter.addEventListener("change", renderMarketplaceListings);
+    }
+
+    const priceFilter = document.getElementById("price-filter");
+    if (priceFilter) {
+      priceFilter.addEventListener("change", renderMarketplaceListings);
+    }
+
+    const levelFilter = document.getElementById("level-filter");
+    if (levelFilter) {
+      levelFilter.addEventListener("change", renderMarketplaceListings);
+    }
+
+    const clearFiltersBtn = document.getElementById("clear-filters");
+    if (clearFiltersBtn) {
+      clearFiltersBtn.addEventListener("click", () => {
+        if (searchInput) searchInput.value = "";
+        if (regionFilter) regionFilter.value = "";
+        if (priceFilter) priceFilter.value = "";
+        if (levelFilter) levelFilter.value = "";
+        renderMarketplaceListings();
+        showToast("Filters cleared ✅");
+      });
+    }
+
     return unsubscribe;
 
   } catch (err) {
@@ -832,7 +949,7 @@ onAuthStateChanged(auth, (user) => {
 
     unlockTopupForUser(user);
     loadUserOrders(user.uid);
-    loadMarketplaceListings(); // Load approved listings for marketplace
+    loadMarketplaceListings(); // Load approved listings with search/filter support
 
     if (adminLink) {
       adminLink.style.display = isAdmin ? "inline-block" : "none";

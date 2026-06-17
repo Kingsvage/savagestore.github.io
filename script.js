@@ -22,7 +22,8 @@ import {
   query,
   orderBy,
   where,
-  serverTimestamp
+  serverTimestamp,
+  onSnapshot
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 import { firebaseConfig, emailConfig, adminConfig } from "./config.js";
@@ -277,7 +278,119 @@ async function sendDeliveredReceiptEmail(orderData) {
   }
 }
 
-// FIX #4: Load admin listings - NOW GLOBAL (moved out of loadAdminOrders)
+// NEW: Load approved marketplace listings with real-time updates
+function loadMarketplaceListings() {
+  const marketplaceGrid = document.getElementById("marketplace-grid");
+
+  if (!marketplaceGrid) return;
+
+  try {
+    // Query for approved listings only, ordered by newest first
+    const listingsQuery = query(
+      collection(db, "listings"),
+      where("status", "==", "approved"),
+      orderBy("approvedAt", "desc")
+    );
+
+    // Use onSnapshot for real-time updates
+    const unsubscribe = onSnapshot(listingsQuery, (snapshot) => {
+      console.log("MARKETPLACE LISTINGS UPDATED:", snapshot.size);
+
+      let listings = [];
+
+      snapshot.forEach((docSnap) => {
+        listings.push({
+          id: docSnap.id,
+          ...docSnap.data()
+        });
+      });
+
+      marketplaceGrid.replaceChildren();
+
+      if (!listings.length) {
+        const emptyMsg = document.createElement("p");
+        emptyMsg.textContent = "No approved listings available at this time.";
+        marketplaceGrid.appendChild(emptyMsg);
+        return;
+      }
+
+      // Create market cards for each approved listing
+      listings.forEach((listing) => {
+        const card = document.createElement("div");
+        card.className = "market-card";
+
+        // Badge
+        const badge = document.createElement("div");
+        badge.className = "badge";
+        badge.textContent = "VERIFIED";
+        card.appendChild(badge);
+
+        // Placeholder image
+        const img = document.createElement("img");
+        img.src = "https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1200&auto=format&fit=crop";
+        img.alt = listing.title;
+        card.appendChild(img);
+
+        // Title
+        const title = document.createElement("h3");
+        title.textContent = listing.title;
+        card.appendChild(title);
+
+        // Description with listing details
+        const description = document.createElement("p");
+        description.textContent = `Region: ${listing.region} • Level ${listing.level} • Rank: ${listing.rank}`;
+        card.appendChild(description);
+
+        // Additional description
+        const details = document.createElement("p");
+        details.textContent = listing.description;
+        card.appendChild(details);
+
+        // Price
+        const price = document.createElement("h2");
+        price.textContent = `₦${Number(listing.price).toLocaleString()}`;
+        card.appendChild(price);
+
+        // Seller contact info (optional)
+        const sellerInfo = document.createElement("p");
+        sellerInfo.style.fontSize = "0.9em";
+        sellerInfo.style.color = "#888";
+        sellerInfo.textContent = `Seller: ${listing.sellerName}`;
+        card.appendChild(sellerInfo);
+
+        // Chat button
+        const button = document.createElement("button");
+        button.type = "button";
+        button.textContent = "CHAT ADMIN TO BUY";
+        button.addEventListener("click", () => {
+          chatAdminForAccount(listing.title, listing.price);
+        });
+        card.appendChild(button);
+
+        marketplaceGrid.appendChild(card);
+      });
+
+    }, (error) => {
+      console.error("MARKETPLACE LISTENER ERROR:", error);
+      marketplaceGrid.replaceChildren();
+      const errorMsg = document.createElement("p");
+      errorMsg.textContent = "Error loading marketplace listings.";
+      marketplaceGrid.appendChild(errorMsg);
+    });
+
+    // Return unsubscribe function for cleanup if needed
+    return unsubscribe;
+
+  } catch (err) {
+    console.error("LOAD MARKETPLACE ERROR:", err);
+    marketplaceGrid.replaceChildren();
+    const errorMsg = document.createElement("p");
+    errorMsg.textContent = "Could not load marketplace listings.";
+    marketplaceGrid.appendChild(errorMsg);
+  }
+}
+
+// Load admin listings - NOW GLOBAL (moved out of loadAdminOrders)
 async function loadAdminListings() {
   console.log("LOAD ADMIN LISTINGS STARTED");
   const listingsList = document.getElementById("listings-list");
@@ -312,7 +425,6 @@ async function loadAdminListings() {
 
     listingsList.replaceChildren();
 
-    // FIX #2: Use DOM manipulation instead of innerHTML += to prevent XSS vulnerability
     listings.forEach((listing) => {
       const card = document.createElement("div");
       card.className = "order-card";
@@ -373,7 +485,7 @@ window.approveListing = async (listingId) => {
       }
     );
 
-    showToast("Listing approved ✅");
+    showToast("Listing approved ✅ - Marketplace will update in real-time!");
     loadAdminListings();
 
   } catch (err) {
@@ -720,6 +832,7 @@ onAuthStateChanged(auth, (user) => {
 
     unlockTopupForUser(user);
     loadUserOrders(user.uid);
+    loadMarketplaceListings(); // Load approved listings for marketplace
 
     if (adminLink) {
       adminLink.style.display = isAdmin ? "inline-block" : "none";
@@ -818,7 +931,6 @@ window.openOrderModal = (item, price) => {
     return;
   }
 
-  // FIX #3: Validate price is a number before using
   const numPrice = Number(price);
   if (isNaN(numPrice) || numPrice <= 0) {
     alert("Invalid price ⚡");
@@ -848,7 +960,6 @@ window.openOrderModal = (item, price) => {
     emailInput.value = user.email;
   }
 
-  // FIX #5: Safe modal reference check
   const modal = document.getElementById("order-modal");
   if (modal) {
     modal.classList.remove("hidden");
@@ -1056,7 +1167,6 @@ window.submitAccountListing = async () => {
 
   const numericPrice = Number(price);
 
-  // FIX #6: Simplified price validation
   if (!Number.isInteger(numericPrice) || numericPrice <= 0) {
     alert("Price must be a positive whole number only ⚡");
     return;

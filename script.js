@@ -25,16 +25,7 @@ import {
   serverTimestamp
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
-const firebaseConfig = {
-  apiKey: "AIzaSyB7W0bvFnDfEUzuwuAIoGCwRakfFiTEt48",
-  authDomain: "savage-store-18507.firebaseapp.com",
-  databaseURL: "https://savage-store-18507-default-rtdb.firebaseio.com",
-  projectId: "savage-store-18507",
-  storageBucket: "savage-store-18507.firebasestorage.app",
-  messagingSenderId: "521961005705",
-  appId: "1:521961005705:web:216bf71293154e67c29c58",
-  measurementId: "G-86K4ZGMZQ4"
-};
+import { firebaseConfig, emailConfig, adminConfig } from "./config.js";
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
@@ -47,22 +38,12 @@ provider.setCustomParameters({
   prompt: "select_account"
 });
 
-const emailServiceId = "service_oabtkuc";
-const emailTemplateId = "template_jeabwaa";
-const emailPublicKey = "VGMXshIsMZlghPhDW";
-
-emailjs.init(emailPublicKey);
+emailjs.init(emailConfig.publicKey);
 
 let currentOrder = {
   item: "",
   price: 0
 };
-
-const accountNumber = "7071048081";
-
-const adminEmails = [
-  "chukwumachidozie18@gmail.com"
-];
 
 function setText(element, value) {
   if (element) {
@@ -215,8 +196,8 @@ window.logout = async () => {
 async function sendCustomerConfirmationEmail(orderData) {
   try {
     await emailjs.send(
-      emailServiceId,
-      emailTemplateId,
+      emailConfig.serviceId,
+      emailConfig.templateId,
       {
         to_email: orderData.customerEmail,
         user_email: orderData.customerEmail,
@@ -236,18 +217,19 @@ async function sendCustomerConfirmationEmail(orderData) {
     );
   } catch (err) {
     console.error("CUSTOMER EMAIL ERROR:", err);
+    showToast("⚠️ Confirmation email could not be sent");
   }
 }
 
 async function sendAdminOrderEmail(orderData) {
   try {
     await emailjs.send(
-      emailServiceId,
-      emailTemplateId,
+      emailConfig.serviceId,
+      emailConfig.templateId,
       {
-        to_email: adminEmails[0],
-        user_email: adminEmails[0],
-        email: adminEmails[0],
+        to_email: adminConfig.emails[0],
+        user_email: adminConfig.emails[0],
+        email: adminConfig.emails[0],
         reply_to: orderData.customerEmail,
 
         to_name: "Savage Store Admin",
@@ -263,19 +245,20 @@ async function sendAdminOrderEmail(orderData) {
     );
   } catch (err) {
     console.error("ADMIN EMAIL ERROR:", err);
+    showToast("⚠️ Admin notification email could not be sent");
   }
 }
 
 async function sendDeliveredReceiptEmail(orderData) {
   try {
     await emailjs.send(
-      emailServiceId,
-      emailTemplateId,
+      emailConfig.serviceId,
+      emailConfig.templateId,
       {
         to_email: orderData.customerEmail,
         user_email: orderData.customerEmail,
         email: orderData.customerEmail,
-        reply_to: adminEmails[0],
+        reply_to: adminConfig.emails[0],
 
         to_name: orderData.customerName,
         customer_name: orderData.customerName,
@@ -290,8 +273,132 @@ async function sendDeliveredReceiptEmail(orderData) {
     );
   } catch (err) {
     console.error("DELIVERED EMAIL ERROR:", err);
+    showToast("⚠️ Delivery receipt email could not be sent");
   }
 }
+
+// FIX #4: Load admin listings - NOW GLOBAL (moved out of loadAdminOrders)
+async function loadAdminListings() {
+  console.log("LOAD ADMIN LISTINGS STARTED");
+  const listingsList = document.getElementById("listings-list");
+
+  if (!listingsList) return;
+
+  try {
+    const listingsQuery = query(
+      collection(db, "listings"),
+      orderBy("createdAt", "desc")
+    );
+
+    const snapshot = await getDocs(listingsQuery);
+    console.log("LISTINGS COUNT:", snapshot.size);
+
+    let listings = [];
+
+    snapshot.forEach((docSnap) => {
+      listings.push({
+        id: docSnap.id,
+        ...docSnap.data()
+      });
+    });
+
+    if (!listings.length) {
+      listingsList.replaceChildren();
+      const emptyMsg = document.createElement("p");
+      emptyMsg.textContent = "No listings found.";
+      listingsList.appendChild(emptyMsg);
+      return;
+    }
+
+    listingsList.replaceChildren();
+
+    // FIX #2: Use DOM manipulation instead of innerHTML += to prevent XSS vulnerability
+    listings.forEach((listing) => {
+      const card = document.createElement("div");
+      card.className = "order-card";
+
+      const title = document.createElement("h3");
+      title.textContent = listing.title;
+      card.appendChild(title);
+
+      const fields = [
+        { label: "Seller", value: listing.sellerName },
+        { label: "Email", value: listing.sellerEmail },
+        { label: "Region", value: listing.region },
+        { label: "Rank", value: listing.rank },
+        { label: "Level", value: listing.level },
+        { label: "Price", value: `₦${Number(listing.price).toLocaleString()}` },
+        { label: "Status", value: listing.status }
+      ];
+
+      fields.forEach(({ label, value }) => {
+        appendOrderField(card, label, value);
+      });
+
+      const description = document.createElement("p");
+      description.textContent = listing.description;
+      card.appendChild(description);
+
+      const approveBtn = document.createElement("button");
+      approveBtn.className = "primary-btn";
+      approveBtn.textContent = "APPROVE";
+      approveBtn.addEventListener("click", () => approveListing(listing.id));
+      card.appendChild(approveBtn);
+
+      const rejectBtn = document.createElement("button");
+      rejectBtn.className = "danger-btn";
+      rejectBtn.textContent = "REJECT";
+      rejectBtn.addEventListener("click", () => rejectListing(listing.id));
+      card.appendChild(rejectBtn);
+
+      listingsList.appendChild(card);
+    });
+
+  } catch (err) {
+    console.error("LOAD LISTINGS ERROR:", err);
+    listingsList.replaceChildren();
+    const errorMsg = document.createElement("p");
+    errorMsg.textContent = "Error loading listings.";
+    listingsList.appendChild(errorMsg);
+  }
+}
+
+window.approveListing = async (listingId) => {
+  try {
+    await updateDoc(
+      doc(db, "listings", listingId),
+      {
+        status: "approved",
+        approvedAt: serverTimestamp()
+      }
+    );
+
+    showToast("Listing approved ✅");
+    loadAdminListings();
+
+  } catch (err) {
+    console.error("APPROVE LISTING ERROR:", err);
+    showToast("⚠️ Failed to approve listing");
+  }
+};
+
+window.rejectListing = async (listingId) => {
+  try {
+    await updateDoc(
+      doc(db, "listings", listingId),
+      {
+        status: "rejected"
+      }
+    );
+
+    showToast("Listing rejected ❌");
+    loadAdminListings();
+
+  } catch (err) {
+    console.error("REJECT LISTING ERROR:", err);
+    showToast("⚠️ Failed to reject listing");
+  }
+};
 
 async function loadAdminOrders() {
   const ordersList = document.getElementById("orders-list");
@@ -370,170 +477,6 @@ async function loadAdminOrders() {
       });
     }
 
-    async function loadAdminListings() {
-console.log("LOAD ADMIN LISTINGS STARTED");
-  const listingsList =
-    document.getElementById("listings-list");
-
-  if (!listingsList) return;
-
-  try {
-
-    const listingsQuery = query(
-      collection(db, "listings"),
-      orderBy("createdAt", "desc")
-    );
-
-    const snapshot =
-      await getDocs(listingsQuery);
-    console.log("LISTINGS COUNT:", snapshot.size);
-
-    let listings = [];
-
-    snapshot.forEach((docSnap) => {
-
-      listings.push({
-        id: docSnap.id,
-        ...docSnap.data()
-      });
-
-    });
-
-    if (!listings.length) {
-
-      listingsList.innerHTML =
-        "<p>No listings found.</p>";
-
-      return;
-    }
-
-    listingsList.innerHTML = "";
-
-    listings.forEach((listing) => {
-
-      listingsList.innerHTML += `
-
-        <div class="order-card">
-
-          <h3>${listing.title}</h3>
-
-          <p>
-            <strong>Seller:</strong>
-            ${listing.sellerName}
-          </p>
-
-          <p>
-            <strong>Email:</strong>
-            ${listing.sellerEmail}
-          </p>
-
-          <p>
-            <strong>Region:</strong>
-            ${listing.region}
-          </p>
-
-          <p>
-            <strong>Rank:</strong>
-            ${listing.rank}
-          </p>
-
-          <p>
-            <strong>Level:</strong>
-            ${listing.level}
-          </p>
-
-          <p>
-            <strong>Price:</strong>
-            ₦${Number(listing.price).toLocaleString()}
-          </p>
-
-          <p>
-            <strong>Status:</strong>
-            ${listing.status}
-          </p>
-
-          <p>
-            ${listing.description}
-          </p>
-
-          <button
-            class="primary-btn"
-            onclick="approveListing('${listing.id}')"
-          >
-            APPROVE
-          </button>
-
-          <button
-            class="danger-btn"
-            onclick="rejectListing('${listing.id}')"
-          >
-            REJECT
-          </button>
-
-        </div>
-
-      `;
-
-    });
-
-  } catch (err) {
-
-    console.error(
-      "LOAD LISTINGS ERROR:",
-      err
-    );
-
-  }
-
-}
-
-    window.approveListing = async (listingId) => {
-
-  try {
-
-    await updateDoc(
-      doc(db, "listings", listingId),
-      {
-        status: "approved",
-        approvedAt: serverTimestamp()
-      }
-    );
-
-    showToast("Listing approved ✅");
-
-    loadAdminListings();
-
-  } catch (err) {
-
-    console.error(err);
-
-  }
-
-};
-
-    window.rejectListing = async (listingId) => {
-
-  try {
-
-    await updateDoc(
-      doc(db, "listings", listingId),
-      {
-        status: "rejected"
-      }
-    );
-
-    showToast("Listing rejected ❌");
-
-    loadAdminListings();
-
-  } catch (err) {
-
-    console.error(err);
-
-  }
-
-};
-    
     renderOrders();
 
     if (searchInput) {
@@ -559,7 +502,7 @@ window.updateOrderStatus = async (orderDocId, newStatus) => {
   const user = auth.currentUser;
   const allowedStatuses = ["processing", "delivered", "failed"];
 
-  if (!user || !adminEmails.includes(user.email.toLowerCase())) {
+  if (!user || !adminConfig.emails.includes(user.email.toLowerCase())) {
     alert("Admin access required.");
     return;
   }
@@ -724,7 +667,7 @@ onAuthStateChanged(auth, (user) => {
 
   if (user) {
     const loggedInEmail = user.email.toLowerCase();
-    const isAdmin = adminEmails.includes(loggedInEmail);
+    const isAdmin = adminConfig.emails.includes(loggedInEmail);
 
     if (storeLink) {
       storeLink.style.display = "inline-block";
@@ -875,8 +818,15 @@ window.openOrderModal = (item, price) => {
     return;
   }
 
+  // FIX #3: Validate price is a number before using
+  const numPrice = Number(price);
+  if (isNaN(numPrice) || numPrice <= 0) {
+    alert("Invalid price ⚡");
+    return;
+  }
+
   currentOrder.item = item;
-  currentOrder.price = price;
+  currentOrder.price = numPrice;
 
   const summary = document.getElementById("order-summary");
 
@@ -888,7 +838,7 @@ window.openOrderModal = (item, price) => {
       itemSummary,
       document.createElement("br"),
       document.createElement("br"),
-      `Price: ₦${price.toLocaleString()}`
+      `Price: ₦${numPrice.toLocaleString()}`
     );
   }
 
@@ -898,7 +848,11 @@ window.openOrderModal = (item, price) => {
     emailInput.value = user.email;
   }
 
-  document.getElementById("order-modal").classList.remove("hidden");
+  // FIX #5: Safe modal reference check
+  const modal = document.getElementById("order-modal");
+  if (modal) {
+    modal.classList.remove("hidden");
+  }
 };
 
 window.closeModal = () => {
@@ -911,10 +865,10 @@ window.closeModal = () => {
 
 window.copyAccountNumber = async () => {
   try {
-    await navigator.clipboard.writeText(accountNumber);
+    await navigator.clipboard.writeText(adminConfig.accountNumber);
     showToast("Account number copied ✅");
   } catch (err) {
-    alert("Account number: " + accountNumber);
+    alert("Account number: " + adminConfig.accountNumber);
   }
 };
 
@@ -974,7 +928,7 @@ window.completeOrder = async () => {
 
     loadUserOrders(user.uid);
 
-    if (adminEmails.includes(user.email.toLowerCase())) {
+    if (adminConfig.emails.includes(user.email.toLowerCase())) {
       loadAdminOrders();
     }
 
@@ -1055,11 +1009,17 @@ window.chatAdminForAccount = (accountName, price) => {
     return;
   }
 
+  const numPrice = Number(price);
+  if (isNaN(numPrice)) {
+    alert("Invalid price ⚡");
+    return;
+  }
+
   const message = `
 SAVAGE STORE ACCOUNT REQUEST
 
 ACCOUNT: ${accountName}
-PRICE: ₦${Number(price).toLocaleString()}
+PRICE: ₦${numPrice.toLocaleString()}
 
 CUSTOMER NAME: ${user.displayName}
 CUSTOMER EMAIL: ${user.email}
@@ -1068,7 +1028,7 @@ I want to buy this account. Please confirm availability.
 `;
 
   const whatsappURL =
-    `https://wa.me/2347120004769?text=${encodeURIComponent(message)}`;
+    `https://wa.me/${adminConfig.whatsappNumber}?text=${encodeURIComponent(message)}`;
 
   window.open(whatsappURL, "_blank");
 };
@@ -1096,8 +1056,8 @@ window.submitAccountListing = async () => {
 
   const numericPrice = Number(price);
 
-  if (price.includes(".") || price.includes(",") ||
-      !Number.isInteger(numericPrice) || numericPrice <= 0) {
+  // FIX #6: Simplified price validation
+  if (!Number.isInteger(numericPrice) || numericPrice <= 0) {
     alert("Price must be a positive whole number only ⚡");
     return;
   }
@@ -1121,12 +1081,12 @@ window.submitAccountListing = async () => {
     });
 
     await emailjs.send(
-      emailServiceId,
-      emailTemplateId,
+      emailConfig.serviceId,
+      emailConfig.templateId,
       {
-        to_email: adminEmails[0],
-        user_email: adminEmails[0],
-        email: adminEmails[0],
+        to_email: adminConfig.emails[0],
+        user_email: adminConfig.emails[0],
+        email: adminConfig.emails[0],
         reply_to: user.email,
         to_name: "Savage Store Admin",
         customer_name: user.displayName,

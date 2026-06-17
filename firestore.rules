@@ -52,7 +52,11 @@ service cloud.firestore {
         request.resource.data.price is number &&
         request.resource.data.price > 0;
 
+      // Allow signed-in users to read ALL listings (both pending and approved)
       allow read: if signedIn();
+
+      // Allow reading approved listings for marketplace display
+      allow list: if signedIn();
 
       allow update, delete: if isAdmin();
     }

@@ -124,56 +124,63 @@
       </button>
     </div>
 
+    <!-- Search and Filter Section -->
+    <div class="marketplace-controls hidden" id="marketplace-controls">
+      <div class="search-bar">
+        <input
+          type="text"
+          id="marketplace-search"
+          placeholder="🔍 Search by title, seller name, region..."
+        >
+      </div>
+
+      <div class="filter-controls">
+        <select id="region-filter">
+          <option value="">All Regions</option>
+          <option value="Nigeria">Nigeria</option>
+          <option value="Ghana">Ghana</option>
+          <option value="Kenya">Kenya</option>
+          <option value="South Africa">South Africa</option>
+          <option value="Egypt">Egypt</option>
+          <option value="Global">Global</option>
+        </select>
+
+        <select id="price-filter">
+          <option value="">All Prices</option>
+          <option value="0-50000">₦0 - ₦50,000</option>
+          <option value="50000-100000">₦50,000 - ₦100,000</option>
+          <option value="100000-200000">₦100,000 - ₦200,000</option>
+          <option value="200000-500000">₦200,000 - ₦500,000</option>
+          <option value="500000">₦500,000+</option>
+        </select>
+
+        <select id="level-filter">
+          <option value="">All Levels</option>
+          <option value="1">Level 1-20</option>
+          <option value="21">Level 21-40</option>
+          <option value="41">Level 41-60</option>
+          <option value="61">Level 61+</option>
+        </select>
+
+        <button id="clear-filters" class="secondary-btn">Clear Filters</button>
+      </div>
+    </div>
+
+    <!-- Featured Listings Section -->
+    <div class="marketplace-grid hidden" id="featured-section">
+      <div class="section-title" style="grid-column: 1 / -1;">
+        <span>⭐ FEATURED</span>
+        <h3>Premium Listings</h3>
+      </div>
+
+      <div id="featured-grid" class="featured-grid">
+        <p>Loading featured listings...</p>
+      </div>
+    </div>
+
+    <!-- All Listings Section -->
     <div class="marketplace-grid hidden" id="marketplace-grid">
-
-      <div class="market-card">
-        <div class="badge">VERIFIED</div>
-
-        <img
-          src="https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1200&auto=format&fit=crop"
-          alt="Free Fire Account"
-        >
-
-        <h3>Heroic Free Fire Account</h3>
-
-        <p>
-          Region: Nigeria • Level 60+ • Multiple skins • Strong ranked profile.
-        </p>
-
-        <h2>₦45,000</h2>
-
-        <button
-          type="button"
-          onclick="chatAdminForAccount('Heroic Free Fire Account',45000)"
-        >
-          CHAT ADMIN TO BUY
-        </button>
-      </div>
-
-      <div class="market-card">
-        <div class="badge purple">PREMIUM</div>
-
-        <img
-          src="https://images.unsplash.com/photo-1550745165-9bc0b252726f?q=80&w=1200&auto=format&fit=crop"
-          alt="Free Fire Account"
-        >
-
-        <h3>Elite Skin Collection Account</h3>
-
-        <p>
-          Region: Nigeria • Rare bundles • Good UID • Suitable for serious players.
-        </p>
-
-        <h2>₦85,000</h2>
-
-        <button
-          type="button"
-          onclick="chatAdminForAccount('Elite Skin Collection Account',85000)"
-        >
-          CHAT ADMIN TO BUY
-        </button>
-      </div>
-
+      <p>Loading marketplace listings...</p>
     </div>
 
   </section>
@@ -195,7 +202,7 @@
 
   <div class="toast hidden" id="toast"></div>
 
-  <script type="module" src="./script.js?v=51"></script>
+  <script type="module" src="./script.js?v=52"></script>
 
 </body>
 </html>

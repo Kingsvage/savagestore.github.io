@@ -33,18 +33,41 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
-setPersistence(auth, browserLocalPersistence);
+setPersistence(auth, browserLocalPersistence).catch((err) => {
+  console.error("AUTH PERSISTENCE ERROR:", err);
+});
 
 provider.setCustomParameters({
   prompt: "select_account"
 });
 
-emailjs.init(emailConfig.publicKey);
+const emailClient = window.emailjs || null;
+
+if (emailClient) {
+  emailClient.init(emailConfig.publicKey);
+} else {
+  console.warn("EmailJS SDK is unavailable; email notifications are disabled.");
+}
+
+async function sendEmail(templateParams) {
+  if (!emailClient) {
+    throw new Error("EmailJS SDK is unavailable");
+  }
+
+  return emailClient.send(
+    emailConfig.serviceId,
+    emailConfig.templateId,
+    templateParams
+  );
+}
 
 let currentOrder = {
   item: "",
   price: 0
 };
+
+const DEFAULT_LISTING_IMAGE =
+  "https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1200&auto=format&fit=crop";
 
 // Store all listings for filtering
 let allListings = [];
@@ -62,6 +85,42 @@ function appendOrderField(card, label, value) {
   strong.textContent = `${label}:`;
   paragraph.append(strong, ` ${value}`);
   card.appendChild(paragraph);
+}
+
+function getValidImageUrl(url) {
+  const value = (url || "").trim();
+
+  if (!value) {
+    return "";
+  }
+
+  try {
+    const parsedUrl = new URL(value);
+
+    if (parsedUrl.protocol === "http:" || parsedUrl.protocol === "https:") {
+      return parsedUrl.href;
+    }
+  } catch (err) {
+    console.warn("Invalid listing image URL ignored:", value);
+  }
+
+  return "";
+}
+
+function createListingImage(listing, className) {
+  const img = document.createElement("img");
+  const imageUrl = getValidImageUrl(listing.image1);
+
+  img.src = imageUrl || DEFAULT_LISTING_IMAGE;
+  img.alt = listing.title
+    ? `${listing.title} account screenshot`
+    : "Account screenshot";
+
+  if (className) {
+    img.className = className;
+  }
+
+  return img;
 }
 
 function createOrderCard(order, options = {}) {
@@ -127,11 +186,7 @@ function createMarketplaceCard(listing, isFeatured = false) {
   badge.textContent = isFeatured ? "⭐ FEATURED" : "VERIFIED";
   card.appendChild(badge);
 
-  // Placeholder image
-  const img = document.createElement("img");
-  img.src = "https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1200&auto=format&fit=crop";
-  img.alt = listing.title;
-  card.appendChild(img);
+  card.appendChild(createListingImage(listing, "listing-image"));
 
   // Title
   const title = document.createElement("h3");
@@ -183,10 +238,10 @@ function renderMarketplaceListings() {
   const filtered = allListings.filter((listing) => {
     const matchesSearch =
       !searchTerm ||
-      listing.title.toLowerCase().includes(searchTerm) ||
-      listing.sellerName.toLowerCase().includes(searchTerm) ||
-      listing.region.toLowerCase().includes(searchTerm) ||
-      listing.description.toLowerCase().includes(searchTerm);
+      (listing.title || "").toLowerCase().includes(searchTerm) ||
+      (listing.sellerName || "").toLowerCase().includes(searchTerm) ||
+      (listing.region || "").toLowerCase().includes(searchTerm) ||
+      (listing.description || "").toLowerCase().includes(searchTerm);
 
     const matchesRegion = !regionFilter || listing.region === regionFilter;
 
@@ -332,9 +387,7 @@ window.logout = async () => {
 
 async function sendCustomerConfirmationEmail(orderData) {
   try {
-    await emailjs.send(
-      emailConfig.serviceId,
-      emailConfig.templateId,
+    await sendEmail(
       {
         to_email: orderData.customerEmail,
         user_email: orderData.customerEmail,
@@ -360,9 +413,7 @@ async function sendCustomerConfirmationEmail(orderData) {
 
 async function sendAdminOrderEmail(orderData) {
   try {
-    await emailjs.send(
-      emailConfig.serviceId,
-      emailConfig.templateId,
+    await sendEmail(
       {
         to_email: adminConfig.emails[0],
         user_email: adminConfig.emails[0],
@@ -388,9 +439,7 @@ async function sendAdminOrderEmail(orderData) {
 
 async function sendDeliveredReceiptEmail(orderData) {
   try {
-    await emailjs.send(
-      emailConfig.serviceId,
-      emailConfig.templateId,
+    await sendEmail(
       {
         to_email: orderData.customerEmail,
         user_email: orderData.customerEmail,
@@ -424,8 +473,7 @@ function loadMarketplaceListings() {
   try {
     const listingsQuery = query(
       collection(db, "listings"),
-      where("status", "==", "approved"),
-      orderBy("approvedAt", "desc")
+      where("status", "==", "approved")
     );
 
     const unsubscribe = onSnapshot(listingsQuery, (snapshot) => {
@@ -438,6 +486,13 @@ function loadMarketplaceListings() {
           id: docSnap.id,
           ...docSnap.data()
         });
+      });
+
+      allListings.sort((firstListing, secondListing) => {
+        const firstApprovedAt = firstListing.approvedAt?.toMillis?.() || 0;
+        const secondApprovedAt = secondListing.approvedAt?.toMillis?.() || 0;
+
+        return secondApprovedAt - firstApprovedAt;
       });
 
       // Show controls and sections
@@ -549,6 +604,10 @@ async function loadAdminListings() {
       const title = document.createElement("h3");
       title.textContent = listing.title;
       card.appendChild(title);
+
+      if (getValidImageUrl(listing.image1)) {
+        card.appendChild(createListingImage(listing, "admin-listing-image"));
+      }
 
       const fields = [
         { label: "Seller", value: listing.sellerName },
@@ -1275,6 +1334,9 @@ window.submitAccountListing = async () => {
   const level = document.getElementById("seller-level").value.trim();
   const rank = document.getElementById("seller-rank").value.trim();
   const description = document.getElementById("seller-description").value.trim();
+  const image1 = getValidImageUrl(document.getElementById("seller-image-1").value);
+  const image2 = getValidImageUrl(document.getElementById("seller-image-2").value);
+  const image3 = getValidImageUrl(document.getElementById("seller-image-3").value);
   const contact = document.getElementById("seller-contact").value.trim();
 
   if (!title || !region || !price || !level || !rank || !description || !contact) {
@@ -1302,28 +1364,34 @@ window.submitAccountListing = async () => {
       level,
       rank,
       description,
+      image1,
+      image2,
+      image3,
       contact,
       status: "pending-review",
       createdAt: serverTimestamp()
     });
 
-    await emailjs.send(
-      emailConfig.serviceId,
-      emailConfig.templateId,
-      {
-        to_email: adminConfig.emails[0],
-        user_email: adminConfig.emails[0],
-        email: adminConfig.emails[0],
-        reply_to: user.email,
-        to_name: "Savage Store Admin",
-        customer_name: user.displayName,
-        order_item: `NEW ACCOUNT LISTING: ${title}`,
-        item: title,
-        uid: rank,
-        currency_symbol: "₦",
-        price: numericPrice.toLocaleString()
-      }
-    );
+    try {
+      await sendEmail(
+        {
+          to_email: adminConfig.emails[0],
+          user_email: adminConfig.emails[0],
+          email: adminConfig.emails[0],
+          reply_to: user.email,
+          to_name: "Savage Store Admin",
+          customer_name: user.displayName,
+          order_item: `NEW ACCOUNT LISTING: ${title}`,
+          item: title,
+          uid: rank,
+          currency_symbol: "₦",
+          price: numericPrice.toLocaleString()
+        }
+      );
+    } catch (err) {
+      console.error("LISTING EMAIL ERROR:", err);
+      showToast("⚠️ Listing saved, but admin email could not be sent");
+    }
 
     document.getElementById("seller-account-title").value = "";
     document.getElementById("seller-region").value = "";
@@ -1331,6 +1399,9 @@ window.submitAccountListing = async () => {
     document.getElementById("seller-level").value = "";
     document.getElementById("seller-rank").value = "";
     document.getElementById("seller-description").value = "";
+    document.getElementById("seller-image-1").value = "";
+    document.getElementById("seller-image-2").value = "";
+    document.getElementById("seller-image-3").value = "";
     document.getElementById("seller-contact").value = "";
 
     showToast("Listing submitted for admin review ✅");

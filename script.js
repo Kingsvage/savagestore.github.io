@@ -203,10 +203,10 @@ function renderMarketplaceListings() {
   const filtered = allListings.filter((listing) => {
     const matchesSearch =
       !searchTerm ||
-      listing.title.toLowerCase().includes(searchTerm) ||
-      listing.sellerName.toLowerCase().includes(searchTerm) ||
-      listing.region.toLowerCase().includes(searchTerm) ||
-      listing.description.toLowerCase().includes(searchTerm);
+      (listing.title || "").toLowerCase().includes(searchTerm) ||
+      (listing.sellerName || "").toLowerCase().includes(searchTerm) ||
+      (listing.region || "").toLowerCase().includes(searchTerm) ||
+      (listing.description || "").toLowerCase().includes(searchTerm);
 
     const matchesRegion = !regionFilter || listing.region === regionFilter;
 
@@ -438,8 +438,7 @@ function loadMarketplaceListings() {
   try {
     const listingsQuery = query(
       collection(db, "listings"),
-      where("status", "==", "approved"),
-      orderBy("approvedAt", "desc")
+      where("status", "==", "approved")
     );
 
     const unsubscribe = onSnapshot(listingsQuery, (snapshot) => {
@@ -452,6 +451,13 @@ function loadMarketplaceListings() {
           id: docSnap.id,
           ...docSnap.data()
         });
+      });
+
+      allListings.sort((firstListing, secondListing) => {
+        const firstApprovedAt = firstListing.approvedAt?.toMillis?.() || 0;
+        const secondApprovedAt = secondListing.approvedAt?.toMillis?.() || 0;
+
+        return secondApprovedAt - firstApprovedAt;
       });
 
       // Show controls and sections

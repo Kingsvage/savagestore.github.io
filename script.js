@@ -33,13 +33,33 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 const provider = new GoogleAuthProvider();
 
-setPersistence(auth, browserLocalPersistence);
+setPersistence(auth, browserLocalPersistence).catch((err) => {
+  console.error("AUTH PERSISTENCE ERROR:", err);
+});
 
 provider.setCustomParameters({
   prompt: "select_account"
 });
 
-emailjs.init(emailConfig.publicKey);
+const emailClient = window.emailjs || null;
+
+if (emailClient) {
+  emailClient.init(emailConfig.publicKey);
+} else {
+  console.warn("EmailJS SDK is unavailable; email notifications are disabled.");
+}
+
+async function sendEmail(templateParams) {
+  if (!emailClient) {
+    throw new Error("EmailJS SDK is unavailable");
+  }
+
+  return emailClient.send(
+    emailConfig.serviceId,
+    emailConfig.templateId,
+    templateParams
+  );
+}
 
 let currentOrder = {
   item: "",
@@ -183,10 +203,10 @@ function renderMarketplaceListings() {
   const filtered = allListings.filter((listing) => {
     const matchesSearch =
       !searchTerm ||
-      listing.title.toLowerCase().includes(searchTerm) ||
-      listing.sellerName.toLowerCase().includes(searchTerm) ||
-      listing.region.toLowerCase().includes(searchTerm) ||
-      listing.description.toLowerCase().includes(searchTerm);
+      (listing.title || "").toLowerCase().includes(searchTerm) ||
+      (listing.sellerName || "").toLowerCase().includes(searchTerm) ||
+      (listing.region || "").toLowerCase().includes(searchTerm) ||
+      (listing.description || "").toLowerCase().includes(searchTerm);
 
     const matchesRegion = !regionFilter || listing.region === regionFilter;
 
@@ -332,9 +352,7 @@ window.logout = async () => {
 
 async function sendCustomerConfirmationEmail(orderData) {
   try {
-    await emailjs.send(
-      emailConfig.serviceId,
-      emailConfig.templateId,
+    await sendEmail(
       {
         to_email: orderData.customerEmail,
         user_email: orderData.customerEmail,
@@ -360,9 +378,7 @@ async function sendCustomerConfirmationEmail(orderData) {
 
 async function sendAdminOrderEmail(orderData) {
   try {
-    await emailjs.send(
-      emailConfig.serviceId,
-      emailConfig.templateId,
+    await sendEmail(
       {
         to_email: adminConfig.emails[0],
         user_email: adminConfig.emails[0],
@@ -388,9 +404,7 @@ async function sendAdminOrderEmail(orderData) {
 
 async function sendDeliveredReceiptEmail(orderData) {
   try {
-    await emailjs.send(
-      emailConfig.serviceId,
-      emailConfig.templateId,
+    await sendEmail(
       {
         to_email: orderData.customerEmail,
         user_email: orderData.customerEmail,
@@ -424,8 +438,7 @@ function loadMarketplaceListings() {
   try {
     const listingsQuery = query(
       collection(db, "listings"),
-      where("status", "==", "approved"),
-      orderBy("approvedAt", "desc")
+      where("status", "==", "approved")
     );
 
     const unsubscribe = onSnapshot(listingsQuery, (snapshot) => {
@@ -438,6 +451,13 @@ function loadMarketplaceListings() {
           id: docSnap.id,
           ...docSnap.data()
         });
+      });
+
+      allListings.sort((firstListing, secondListing) => {
+        const firstApprovedAt = firstListing.approvedAt?.toMillis?.() || 0;
+        const secondApprovedAt = secondListing.approvedAt?.toMillis?.() || 0;
+
+        return secondApprovedAt - firstApprovedAt;
       });
 
       // Show controls and sections
@@ -1307,23 +1327,26 @@ window.submitAccountListing = async () => {
       createdAt: serverTimestamp()
     });
 
-    await emailjs.send(
-      emailConfig.serviceId,
-      emailConfig.templateId,
-      {
-        to_email: adminConfig.emails[0],
-        user_email: adminConfig.emails[0],
-        email: adminConfig.emails[0],
-        reply_to: user.email,
-        to_name: "Savage Store Admin",
-        customer_name: user.displayName,
-        order_item: `NEW ACCOUNT LISTING: ${title}`,
-        item: title,
-        uid: rank,
-        currency_symbol: "₦",
-        price: numericPrice.toLocaleString()
-      }
-    );
+    try {
+      await sendEmail(
+        {
+          to_email: adminConfig.emails[0],
+          user_email: adminConfig.emails[0],
+          email: adminConfig.emails[0],
+          reply_to: user.email,
+          to_name: "Savage Store Admin",
+          customer_name: user.displayName,
+          order_item: `NEW ACCOUNT LISTING: ${title}`,
+          item: title,
+          uid: rank,
+          currency_symbol: "₦",
+          price: numericPrice.toLocaleString()
+        }
+      );
+    } catch (err) {
+      console.error("LISTING EMAIL ERROR:", err);
+      showToast("⚠️ Listing saved, but admin email could not be sent");
+    }
 
     document.getElementById("seller-account-title").value = "";
     document.getElementById("seller-region").value = "";

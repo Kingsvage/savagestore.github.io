@@ -8,7 +8,7 @@
 
   <meta
     name="description"
-    content="Buy Free Fire diamonds on Savage Store with secure payment and fast delivery."
+    content="Top up Free Fire Diamonds and Call of Duty Points with secure payment and tracked delivery."
   />
 
   <link rel="icon" href="https://www.image2url.com/r2/default/images/1778679132528-369f040c-1b4c-4795-826e-514f59f2ec64.png">
@@ -21,7 +21,7 @@
     rel="stylesheet"
   >
 
-<link rel="stylesheet" href="style.css?v=47">
+<link rel="stylesheet" href="style.css?v=60">
 
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 </head>
@@ -69,18 +69,18 @@
       <div class="hero-left">
 
         <span class="top-tag">
-          💎 FREE FIRE DIAMOND TOP UP
+          🎮 MULTI-GAME TOP UP
         </span>
 
         <h1>
           TOP UP
-          <span>DIAMONDS</span>
+          <span>YOUR GAME</span>
           <br>
           FAST & SECURE
         </h1>
 
         <p>
-          Login to view diamond prices, enter your Free Fire UID, make payment, and receive order confirmation.
+          Select Free Fire or Call of Duty, choose the right currency package, then track your order.
         </p>
 
         <div class="hero-buttons">
@@ -175,6 +175,11 @@
       </button>
     </div>
 
+    <div class="game-selector" id="game-selector">
+      <button type="button" class="game-choice active" data-game="free-fire">FREE FIRE <small>Diamonds</small></button>
+      <button type="button" class="game-choice" data-game="call-of-duty">CALL OF DUTY <small>COD Points</small></button>
+    </div>
+    <p class="topup-game-note" id="topup-game-note">Free Fire · Diamonds · Enter your Free Fire Player UID</p>
     <div class="diamond-grid hidden" id="diamond-grid">
 
       <div class="diamond-card">
@@ -283,6 +288,10 @@
         </button>
       </div>
 
+      <div class="diamond-card cod-product hidden" data-product-game="call-of-duty"><div class="badge purple">CODM</div><h3>80 COD Points</h3><p class="price">₦1,800</p><button type="button" data-game="call-of-duty" data-price="1800" data-item="80 COD Points" onclick="openTopupPackageOrder(this)">BUY NOW</button></div>
+      <div class="diamond-card cod-product hidden" data-product-game="call-of-duty"><div class="badge purple">CODM</div><h3>420 COD Points</h3><p class="price">₦8,000</p><button type="button" data-game="call-of-duty" data-price="8000" data-item="420 COD Points" onclick="openTopupPackageOrder(this)">BUY NOW</button></div>
+      <div class="diamond-card cod-product hidden" data-product-game="call-of-duty"><div class="badge purple">CODM</div><h3>880 COD Points</h3><p class="price">₦15,500</p><button type="button" data-game="call-of-duty" data-price="15500" data-item="880 COD Points" onclick="openTopupPackageOrder(this)">BUY NOW</button></div>
+
       <div class="custom-diamond-box">
 
         <h3>Custom Diamond Request</h3>
@@ -356,7 +365,7 @@
       <input
         type="text"
         id="uid"
-        placeholder="Enter Free Fire UID"
+        placeholder="Enter Free Fire Player UID"
       >
 
       <input
@@ -397,7 +406,7 @@
 
           <br><br>
 
-          You must use your exact Free Fire UID as the payment narration/description when making transfer.
+          Use your exact Player UID / Player ID as the payment narration/description when making transfer.
 
           <br><br>
 
@@ -420,7 +429,7 @@
 
   <div class="toast hidden" id="toast"></div>
 
-  <script type="module" src="./script.js?v=55"></script>
+  <script type="module" src="./script.js?v=60"></script>
 
 </body>
 </html>

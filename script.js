@@ -63,7 +63,8 @@ async function sendEmail(templateParams) {
 
 let currentOrder = {
   item: "",
-  price: 0
+  price: 0,
+  gameId: "free-fire"
 };
 
 const DEFAULT_LISTING_IMAGE =
@@ -73,6 +74,54 @@ const DEFAULT_LISTING_IMAGE =
 let allListings = [];
 let selectedAccountListing = null;
 
+// Single source of truth for games. Legacy records without gameId remain Free Fire.
+const games = [
+  { id: "free-fire", name: "Free Fire", shortName: "FF", enabled: true, currency: "Diamonds", uidLabel: "Free Fire Player UID" },
+  { id: "call-of-duty", name: "Call of Duty Mobile", shortName: "CODM", enabled: true, currency: "COD Points", uidLabel: "Call of Duty Player UID / Player ID" }
+];
+
+function getGame(gameId) { return games.find((game) => game.id === gameId) || games[0]; }
+function getListingGameId(listing) { return listing.gameId || "free-fire"; }
+function getOrderGameId(order) { return order.gameId || "free-fire"; }
+
+// Product data is kept alongside game metadata so additional game currencies can be added without changing order flow.
+const topupProducts = [
+  { gameId: "free-fire", productType: "diamonds", productName: "100 Diamonds", amount: 100, price: 1600, enabled: true },
+  { gameId: "free-fire", productType: "diamonds", productName: "210 Diamonds", amount: 210, price: 3200, enabled: true },
+  { gameId: "free-fire", productType: "diamonds", productName: "530 Diamonds", amount: 530, price: 7900, enabled: true },
+  { gameId: "call-of-duty", productType: "cod-points", productName: "80 COD Points", amount: 80, price: 1800, enabled: true },
+  { gameId: "call-of-duty", productType: "cod-points", productName: "420 COD Points", amount: 420, price: 8000, enabled: true },
+  { gameId: "call-of-duty", productType: "cod-points", productName: "880 COD Points", amount: 880, price: 15500, enabled: true }
+];
+const SAVAGE_LOGO_URL = "https://www.image2url.com/r2/default/images/1778679132528-369f040c-1b4c-4795-826e-514f59f2ec64.png";
+
+function initializeAppShell() {
+  const currentPage = location.pathname.split("/").pop() || "index.html";
+  const pageLinks = [
+    ["index.html", "Home"], ["marketplace.html", "Marketplace"], ["sell.html", "Sell Account"],
+    ["topup.html", "Top Up"], ["orders.html", "My Orders"]
+  ];
+  const links = pageLinks.map(([href, label]) => `<a class="${currentPage === href ? "is-active" : ""}" href="${href}">${label}</a>`).join("");
+  const header = document.querySelector("header");
+  if (header) {
+    header.className = "top-navbar";
+    header.innerHTML = `<a class="brand-logo" href="index.html" aria-label="Savage Store home"><img src="${SAVAGE_LOGO_URL}" alt="Savage Store"></a><button class="menu-toggle" type="button" aria-label="Open navigation" onclick="toggleMobileMenu()">☰</button><nav class="primary-nav">${links}<a href="admin.html" id="admin-link" style="display:none">Admin</a></nav><div class="nav-tools"><label class="global-search"><span>⌕</span><input id="global-search" type="search" placeholder="Search games, accounts, or items..."></label><button class="icon-button" type="button" aria-label="Cart">⌑</button><button class="icon-button" type="button" aria-label="Notifications">◌</button><span id="nav-user-label" class="nav-user-label">Guest</span><button type="button" class="nav-btn" id="nav-login-btn" onclick="signInWithGoogle()">LOGIN / SIGN UP</button></div>`;
+  }
+  if (!document.querySelector(".sidebar")) {
+    const sidebar = document.createElement("aside");
+    sidebar.className = "sidebar";
+    sidebar.innerHTML = `<a class="sidebar-logo" href="index.html"><img src="${SAVAGE_LOGO_URL}" alt="Savage Store"></a><p class="sidebar-label">MAIN MENU</p><nav>${links}</nav><p class="sidebar-label">GAME CATEGORIES</p><nav class="game-nav"><a href="marketplace.html?game=free-fire">🔥 <span>Free Fire</span></a><a href="marketplace.html?game=call-of-duty">COD <span>Call of Duty</span></a><a class="muted-link" href="marketplace.html">＋ <span>More Games</span></a></nav><div class="sidebar-support"><b>NEED HELP?</b><p>Chat with Savage Store support.</p><a href="https://wa.me/2347120004769" target="_blank" rel="noopener">CHAT NOW →</a></div>`;
+    document.body.prepend(sidebar);
+    document.body.classList.add("has-sidebar");
+  }
+  const footer = document.querySelector("footer");
+  if (footer) footer.innerHTML = `<div><img class="footer-logo" src="${SAVAGE_LOGO_URL}" alt="Savage Store"><p>Gaming Accounts • Top Up • Marketplace</p></div><nav>${links}</nav><div><p>Need help?</p><a href="https://wa.me/2347120004769" target="_blank" rel="noopener">CHAT WITH SUPPORT →</a><p>© 2026 Savage Store</p></div>`;
+  document.getElementById("global-search")?.addEventListener("keydown", (event) => {
+    if (event.key === "Enter" && event.currentTarget.value.trim()) location.href = `marketplace.html?search=${encodeURIComponent(event.currentTarget.value.trim())}`;
+  });
+}
+
+initializeAppShell();
 
 const defaultSiteSettings = {
   diamondRate: 15,
@@ -332,6 +381,7 @@ function createListingImage(listing, className) {
 }
 
 function createOrderCard(order, options = {}) {
+  const game = getGame(getOrderGameId(order));
   const card = document.createElement("div");
   const title = document.createElement("h3");
   const price = Number(order.price || 0);
@@ -346,10 +396,19 @@ function createOrderCard(order, options = {}) {
     appendOrderField(card, "UID", order.gameUID || "N/A");
   }
 
+  appendOrderField(card, "Game", game.name);
   appendOrderField(card, "Type", order.orderType === "account-purchase" ? "ACCOUNT PURCHASE" : "TOP-UP ORDER");
   appendOrderField(card, "Item", order.item || "N/A");
   appendOrderField(card, "Price", `₦${price.toLocaleString()}`);
-  appendOrderField(card, "Status", order.status || "pending");
+  const statusRow = document.createElement("p");
+  const statusLabel = document.createElement("strong");
+  const statusBadge = document.createElement("span");
+  const status = order.status || "processing";
+  statusLabel.textContent = "Status: ";
+  statusBadge.className = `status-badge status-${status}`;
+  statusBadge.textContent = status.toUpperCase();
+  statusRow.append(statusLabel, statusBadge);
+  card.appendChild(statusRow);
 
   if (order.listingId) {
     appendOrderField(card, "Listing ID", order.listingId);
@@ -480,17 +539,25 @@ function createMarketplaceCard(listing, isFeatured = false) {
   const description = document.createElement("p");
   const price = document.createElement("h2");
   const viewButton = document.createElement("button");
+  const buyButton = document.createElement("button");
+  const actions = document.createElement("div");
 
   card.className = isFeatured ? "market-card featured" : "market-card";
   badge.className = isFeatured ? "badge premium" : "badge";
-  badge.textContent = isFeatured ? "⭐ FEATURED" : "APPROVED";
+  badge.textContent = `${isFeatured ? "⭐ FEATURED · " : ""}${getGame(getListingGameId(listing)).shortName} · ${listing.rank || "ACCOUNT"}`;
   title.textContent = listing.title || "Gaming Account";
-  details.textContent = `Region: ${listing.region || "N/A"} • Rank: ${listing.rank || "N/A"} • Level: ${listing.level || "N/A"}`;
+  details.textContent = `${getGame(getListingGameId(listing)).name} · ${listing.region || "N/A"} · ${listing.rank || "N/A"} · Level ${listing.level || "N/A"} · Available`;
   description.textContent = listing.description || "No description provided.";
   price.textContent = formatNaira(listing.price);
   viewButton.type = "button";
   viewButton.textContent = "VIEW ACCOUNT";
   viewButton.addEventListener("click", () => window.viewAccountListing(listing.id));
+  buyButton.type = "button";
+  buyButton.className = "card-buy-button";
+  buyButton.textContent = "BUY";
+  buyButton.addEventListener("click", () => window.openAccountPurchase(listing.id));
+  actions.className = "account-card-actions";
+  actions.append(viewButton, buyButton);
 
   card.append(
     badge,
@@ -499,15 +566,21 @@ function createMarketplaceCard(listing, isFeatured = false) {
     details,
     description,
     price,
-    viewButton
+    actions
   );
 
   return card;
 }
 
 function renderMarketplaceListings() {
-  const searchTerm = document.getElementById("marketplace-search")?.value.toLowerCase().trim() || "";
+  const searchInput = document.getElementById("marketplace-search");
+  if (searchInput && !searchInput.value && new URLSearchParams(location.search).get("search")) searchInput.value = new URLSearchParams(location.search).get("search");
+  const searchTerm = searchInput?.value.toLowerCase().trim() || "";
   const regionFilter = document.getElementById("region-filter")?.value || "";
+  const gameFilterElement = document.getElementById("game-filter");
+  const requestedGame = new URLSearchParams(location.search).get("game");
+  if (gameFilterElement && !gameFilterElement.value && games.some((game) => game.id === requestedGame)) gameFilterElement.value = requestedGame;
+  const gameFilter = gameFilterElement?.value || "";
   const rankFilter = document.getElementById("rank-filter")?.value.toLowerCase() || "";
   const priceFilter = document.getElementById("price-filter")?.value || "";
   const sortFilter = document.getElementById("sort-filter")?.value || "newest";
@@ -522,15 +595,16 @@ function renderMarketplaceListings() {
       listingRank.includes(searchTerm) ||
       String(listing.region || "").toLowerCase().includes(searchTerm);
 
+    const matchesGame = !gameFilter || getListingGameId(listing) === gameFilter;
     const matchesRegion = !regionFilter || listing.region === regionFilter;
     const matchesRank = !rankFilter || listingRank.includes(rankFilter);
     const matchesPrice = isPriceInRange(Number(listing.price || 0), priceFilter);
 
-    return matchesSearch && matchesRegion && matchesRank && matchesPrice;
+    return matchesSearch && matchesGame && matchesRegion && matchesRank && matchesPrice;
   });
 
   const sortedListings = sortListings(filteredListings, sortFilter);
-  const featuredListings = sortedListings.filter((listing) => Number(listing.price || 0) >= 100000).slice(0, 3);
+  const featuredListings = sortedListings.slice(0, 3);
   const featuredGrid = document.getElementById("featured-grid");
   const marketplaceGrid = document.getElementById("marketplace-grid");
 
@@ -829,7 +903,7 @@ async function loadMarketplaceListings() {
   if (!marketplaceGrid && !featuredGrid) return;
 
   try {
-    const listingsQuery = query(collection(db, "listings"), orderBy("createdAt", "desc"));
+    const listingsQuery = query(collection(db, "listings"), where("status", "==", "approved"));
     const snapshot = await getDocs(listingsQuery);
 
     allListings = [];
@@ -838,6 +912,16 @@ async function loadMarketplaceListings() {
     });
 
     renderMarketplaceListings();
+    const homeGrid = document.getElementById("home-featured-grid");
+    if (homeGrid) {
+      homeGrid.replaceChildren();
+      const featured = sortListings(allListings.filter(isListingApproved), "newest").slice(0, 3);
+      if (!featured.length) {
+        const empty = document.createElement("p");
+        empty.textContent = "No approved accounts are available yet. Check back soon.";
+        homeGrid.appendChild(empty);
+      } else featured.forEach((listing) => homeGrid.appendChild(createMarketplaceCard(listing, true)));
+    }
   } catch (err) {
     console.error("LOAD MARKETPLACE LISTINGS ERROR:", err);
     if (marketplaceGrid) {
@@ -863,7 +947,7 @@ function initializeMarketplaceControls() {
 
   if (controls?.dataset.listenersBound === "true") return;
 
-  ["marketplace-search", "region-filter", "price-filter", "rank-filter", "sort-filter"].forEach((id) => {
+  ["marketplace-search", "game-filter", "region-filter", "price-filter", "rank-filter", "sort-filter"].forEach((id) => {
     const element = document.getElementById(id);
     if (element) {
       element.addEventListener(id === "marketplace-search" ? "input" : "change", renderMarketplaceListings);
@@ -871,7 +955,7 @@ function initializeMarketplaceControls() {
   });
 
   document.getElementById("clear-filters")?.addEventListener("click", () => {
-    ["marketplace-search", "region-filter", "price-filter", "rank-filter", "sort-filter"].forEach((id) => {
+    ["marketplace-search", "game-filter", "region-filter", "price-filter", "rank-filter", "sort-filter"].forEach((id) => {
       const element = document.getElementById(id);
       if (element) element.value = id === "sort-filter" ? "newest" : "";
     });
@@ -899,7 +983,7 @@ window.viewAccountListing = (listingId) => {
 
   title.textContent = listing.title || "Gaming Account";
   details.className = "account-detail-grid";
-  [["Region", listing.region], ["Rank", listing.rank], ["Level", listing.level], ["Status", listing.status]].forEach(([label, value]) => {
+  [["Game", getGame(getListingGameId(listing)).name], ["Region", listing.region], ["Rank", listing.rank], ["Level", listing.level], ["Availability", listing.status === "approved" ? "Available" : listing.status]].forEach(([label, value]) => {
     const item = document.createElement("p");
     const strong = document.createElement("strong");
     strong.textContent = `${label}:`;
@@ -1062,6 +1146,7 @@ window.confirmAccountPurchase = async () => {
         customerEmail: user.email,
         googleEmail: user.email,
         listingId: listing.id,
+        gameId: getListingGameId(latestListing),
         item: latestListing.title || "Gaming Account",
         price: Number(latestListing.price || 0),
         status: "processing",
@@ -1283,6 +1368,7 @@ async function loadAdminOrders() {
   const searchInput = document.getElementById("search-orders");
   const statusFilter = document.getElementById("status-filter");
   const orderTypeFilter = document.getElementById("order-type-filter");
+  const gameFilter = document.getElementById("admin-game-filter");
 
   if (!ordersList) return;
 
@@ -1325,6 +1411,7 @@ async function loadAdminOrders() {
       const search = searchInput ? searchInput.value.toLowerCase() : "";
       const status = statusFilter ? statusFilter.value : "all";
       const orderType = orderTypeFilter ? orderTypeFilter.value : "all";
+      const gameId = gameFilter ? gameFilter.value : "all";
 
       const filtered = orders.filter((order) => {
         const matchesSearch =
@@ -1339,7 +1426,8 @@ async function loadAdminOrders() {
         const matchesOrderType =
           orderType === "all" || (order.orderType || "topup") === orderType;
 
-        return matchesSearch && matchesStatus && matchesOrderType;
+        const matchesGame = gameId === "all" || getOrderGameId(order) === gameId;
+        return matchesSearch && matchesStatus && matchesOrderType && matchesGame;
       });
 
       ordersList.replaceChildren();
@@ -1374,6 +1462,9 @@ async function loadAdminOrders() {
 
       if (orderTypeFilter) {
         orderTypeFilter.addEventListener("change", renderOrders);
+      }
+      if (gameFilter) {
+        gameFilter.addEventListener("change", renderOrders);
       }
 
       ordersList.dataset.listenersBound = "true";
@@ -1523,6 +1614,7 @@ function createSellerListingCard(listing) {
   title.textContent = listing.title || "Gaming Account";
   card.appendChild(title);
 
+  appendListingField(card, "Game", getGame(getListingGameId(listing)).name);
   appendListingField(card, "Price", formatNaira(listing.price));
   appendListingField(card, "Region", listing.region);
   appendListingField(card, "Rank", listing.rank);
@@ -1755,6 +1847,7 @@ onAuthStateChanged(auth, async (user) => {
       ordersLink.style.display = "inline-block";
     }
 
+    setElementText(document.getElementById("nav-user-label"), user.displayName || user.email || "Account");
     if (navLoginBtn) {
       navLoginBtn.textContent = "LOGOUT";
       navLoginBtn.onclick = window.logout;
@@ -1881,8 +1974,9 @@ onAuthStateChanged(auth, async (user) => {
       marketplaceLoginBox.classList.remove("hidden");
     }
 
+    setElementText(document.getElementById("nav-user-label"), "Guest");
     if (navLoginBtn) {
-      navLoginBtn.textContent = "LOGIN";
+      navLoginBtn.textContent = "LOGIN / SIGN UP";
       navLoginBtn.onclick = window.signInWithGoogle;
     }
 
@@ -1950,6 +2044,7 @@ window.openOrderModal = async (item, price) => {
 
   currentOrder.item = item;
   currentOrder.price = numPrice;
+  currentOrder.gameId = currentOrder.gameId || "free-fire";
 
   const summary = document.getElementById("order-summary");
 
@@ -1985,10 +2080,19 @@ window.closeModal = () => {
   }
 };
 
+window.openTopupPackageOrder = async (button) => {
+  currentOrder.gameId = button?.dataset?.game || "free-fire";
+  const item = button?.dataset?.item || "Game Top Up";
+  const price = Number(button?.dataset?.price);
+  if (!Number.isFinite(price) || price <= 0) return alert("Invalid top-up package ⚡");
+  openOrderModal(item, price);
+};
+
 window.openDiamondPackageOrder = async (button) => {
   await ensureSiteSettingsLoaded();
 
   const amount = Number(button?.dataset?.diamonds);
+  currentOrder.gameId = "free-fire";
   const item = button?.dataset?.item || `${amount} Diamonds`;
 
   if (!Number.isInteger(amount) || amount <= 0) {
@@ -2049,6 +2153,7 @@ window.completeOrder = async () => {
     const orderData = {
       orderId: orderId,
       orderType: "topup",
+      gameId: currentOrder.gameId || "free-fire",
       userId: user.uid,
       customerName: user.displayName,
       customerEmail: email,
@@ -2093,8 +2198,25 @@ window.completeOrder = async () => {
   }
 };
 
+function initializeTopupGameSelector() {
+  const choices = document.querySelectorAll(".game-choice");
+  if (!choices.length) return;
+  const setGame = (gameId) => {
+    const game = getGame(gameId);
+    choices.forEach((choice) => choice.classList.toggle("active", choice.dataset.game === gameId));
+    document.querySelectorAll(".diamond-card:not(.cod-product)").forEach((card) => card.classList.toggle("hidden", gameId !== "free-fire"));
+    document.querySelectorAll(".cod-product").forEach((card) => card.classList.toggle("hidden", gameId !== "call-of-duty"));
+    document.querySelector(".custom-diamond-box")?.classList.toggle("hidden", gameId !== "free-fire");
+    const uid = document.getElementById("uid"); if (uid) uid.placeholder = `Enter ${game.uidLabel}`;
+    const note = document.getElementById("topup-game-note"); if (note) note.textContent = `${game.name} · ${game.currency} · Enter your ${game.uidLabel}`;
+  };
+  choices.forEach((choice) => choice.addEventListener("click", () => setGame(choice.dataset.game)));
+  setGame(new URLSearchParams(location.search).get("game") === "call-of-duty" ? "call-of-duty" : "free-fire");
+}
+initializeTopupGameSelector();
+
 window.toggleMobileMenu = () => {
-  const nav = document.querySelector("nav");
+  const nav = document.querySelector(".top-navbar .primary-nav") || document.querySelector("header nav");
 
   if (nav) {
     nav.classList.toggle("active");
@@ -2227,6 +2349,7 @@ window.submitAccountListing = async () => {
     return;
   }
 
+  const gameId = document.getElementById("seller-game")?.value || "free-fire";
   const title = document.getElementById("seller-account-title").value.trim();
   const region = document.getElementById("seller-region").value.trim();
   const price = document.getElementById("seller-price").value.trim();
@@ -2257,6 +2380,7 @@ window.submitAccountListing = async () => {
       sellerId: user.uid,
       sellerName: user.displayName,
       sellerEmail: user.email,
+      gameId,
       title,
       region,
       price: numericPrice,
@@ -2319,3 +2443,10 @@ window.submitAccountListing = async () => {
     );
   }
 };
+
+// Lightweight client-side order filter for the My Orders page.
+document.getElementById("order-filter")?.addEventListener("change", (event) => {
+  document.querySelectorAll("#history-list .order-card").forEach((card) => {
+    card.hidden = event.target.value !== "all" && !card.textContent.includes(event.target.value === "topup" ? "TOP-UP ORDER" : "ACCOUNT PURCHASE");
+  });
+});

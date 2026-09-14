@@ -84,44 +84,6 @@ function getGame(gameId) { return games.find((game) => game.id === gameId) || ga
 function getListingGameId(listing) { return listing.gameId || "free-fire"; }
 function getOrderGameId(order) { return order.gameId || "free-fire"; }
 
-// Product data is kept alongside game metadata so additional game currencies can be added without changing order flow.
-const topupProducts = [
-  { gameId: "free-fire", productType: "diamonds", productName: "100 Diamonds", amount: 100, price: 1600, enabled: true },
-  { gameId: "free-fire", productType: "diamonds", productName: "210 Diamonds", amount: 210, price: 3200, enabled: true },
-  { gameId: "free-fire", productType: "diamonds", productName: "530 Diamonds", amount: 530, price: 7900, enabled: true },
-  { gameId: "call-of-duty", productType: "cod-points", productName: "80 COD Points", amount: 80, price: 1800, enabled: true },
-  { gameId: "call-of-duty", productType: "cod-points", productName: "420 COD Points", amount: 420, price: 8000, enabled: true },
-  { gameId: "call-of-duty", productType: "cod-points", productName: "880 COD Points", amount: 880, price: 15500, enabled: true }
-];
-const SAVAGE_LOGO_URL = "https://www.image2url.com/r2/default/images/1778679132528-369f040c-1b4c-4795-826e-514f59f2ec64.png";
-
-function initializeAppShell() {
-  const currentPage = location.pathname.split("/").pop() || "index.html";
-  const pageLinks = [
-    ["index.html", "Home"], ["marketplace.html", "Marketplace"], ["sell.html", "Sell Account"],
-    ["topup.html", "Top Up"], ["orders.html", "My Orders"]
-  ];
-  const links = pageLinks.map(([href, label]) => `<a class="${currentPage === href ? "is-active" : ""}" href="${href}">${label}</a>`).join("");
-  const header = document.querySelector("header");
-  if (header) {
-    header.className = "top-navbar";
-    header.innerHTML = `<a class="brand-logo" href="index.html" aria-label="Savage Store home"><img src="${SAVAGE_LOGO_URL}" alt="Savage Store"></a><button class="menu-toggle" type="button" aria-label="Open navigation" onclick="toggleMobileMenu()">☰</button><nav class="primary-nav">${links}<a href="admin.html" id="admin-link" style="display:none">Admin</a></nav><div class="nav-tools"><label class="global-search"><span>⌕</span><input id="global-search" type="search" placeholder="Search games, accounts, or items..."></label><button class="icon-button" type="button" aria-label="Cart">⌑</button><button class="icon-button" type="button" aria-label="Notifications">◌</button><span id="nav-user-label" class="nav-user-label">Guest</span><button type="button" class="nav-btn" id="nav-login-btn" onclick="signInWithGoogle()">LOGIN / SIGN UP</button></div>`;
-  }
-  if (!document.querySelector(".sidebar")) {
-    const sidebar = document.createElement("aside");
-    sidebar.className = "sidebar";
-    sidebar.innerHTML = `<a class="sidebar-logo" href="index.html"><img src="${SAVAGE_LOGO_URL}" alt="Savage Store"></a><p class="sidebar-label">MAIN MENU</p><nav>${links}</nav><p class="sidebar-label">GAME CATEGORIES</p><nav class="game-nav"><a href="marketplace.html?game=free-fire">🔥 <span>Free Fire</span></a><a href="marketplace.html?game=call-of-duty">COD <span>Call of Duty</span></a><a class="muted-link" href="marketplace.html">＋ <span>More Games</span></a></nav><div class="sidebar-support"><b>NEED HELP?</b><p>Chat with Savage Store support.</p><a href="https://wa.me/2347120004769" target="_blank" rel="noopener">CHAT NOW →</a></div>`;
-    document.body.prepend(sidebar);
-    document.body.classList.add("has-sidebar");
-  }
-  const footer = document.querySelector("footer");
-  if (footer) footer.innerHTML = `<div><img class="footer-logo" src="${SAVAGE_LOGO_URL}" alt="Savage Store"><p>Gaming Accounts • Top Up • Marketplace</p></div><nav>${links}</nav><div><p>Need help?</p><a href="https://wa.me/2347120004769" target="_blank" rel="noopener">CHAT WITH SUPPORT →</a><p>© 2026 Savage Store</p></div>`;
-  document.getElementById("global-search")?.addEventListener("keydown", (event) => {
-    if (event.key === "Enter" && event.currentTarget.value.trim()) location.href = `marketplace.html?search=${encodeURIComponent(event.currentTarget.value.trim())}`;
-  });
-}
-
-initializeAppShell();
 
 const defaultSiteSettings = {
   diamondRate: 15,
@@ -546,7 +508,7 @@ function createMarketplaceCard(listing, isFeatured = false) {
   badge.className = isFeatured ? "badge premium" : "badge";
   badge.textContent = `${isFeatured ? "⭐ FEATURED · " : ""}${getGame(getListingGameId(listing)).shortName} · ${listing.rank || "ACCOUNT"}`;
   title.textContent = listing.title || "Gaming Account";
-  details.textContent = `${getGame(getListingGameId(listing)).name} · ${listing.region || "N/A"} · ${listing.rank || "N/A"} · Level ${listing.level || "N/A"} · Available`;
+  details.textContent = `${getGame(getListingGameId(listing)).name} · ${listing.region || "N/A"} · ${listing.rank || "N/A"} · Level ${listing.level || "N/A"}`;
   description.textContent = listing.description || "No description provided.";
   price.textContent = formatNaira(listing.price);
   viewButton.type = "button";
@@ -577,10 +539,7 @@ function renderMarketplaceListings() {
   if (searchInput && !searchInput.value && new URLSearchParams(location.search).get("search")) searchInput.value = new URLSearchParams(location.search).get("search");
   const searchTerm = searchInput?.value.toLowerCase().trim() || "";
   const regionFilter = document.getElementById("region-filter")?.value || "";
-  const gameFilterElement = document.getElementById("game-filter");
-  const requestedGame = new URLSearchParams(location.search).get("game");
-  if (gameFilterElement && !gameFilterElement.value && games.some((game) => game.id === requestedGame)) gameFilterElement.value = requestedGame;
-  const gameFilter = gameFilterElement?.value || "";
+  const gameFilter = document.getElementById("game-filter")?.value || "";
   const rankFilter = document.getElementById("rank-filter")?.value.toLowerCase() || "";
   const priceFilter = document.getElementById("price-filter")?.value || "";
   const sortFilter = document.getElementById("sort-filter")?.value || "newest";
@@ -2009,6 +1968,10 @@ onAuthStateChanged(auth, async (user) => {
     }
 
     lockTopupForGuest();
+    // The landing page can safely show approved public listings without a session.
+    if (document.getElementById("home-featured-grid") && isMarketplaceAvailable()) {
+      loadMarketplaceListings();
+    }
   }
   } catch (err) {
     console.error("AUTH STATE HANDLER ERROR:", err);

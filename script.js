@@ -63,7 +63,8 @@ async function sendEmail(templateParams) {
 
 let currentOrder = {
   item: "",
-  price: 0
+  price: 0,
+  gameId: "free-fire"
 };
 
 const DEFAULT_LISTING_IMAGE =
@@ -72,6 +73,16 @@ const DEFAULT_LISTING_IMAGE =
 // Store all listings for filtering
 let allListings = [];
 let selectedAccountListing = null;
+
+// Single source of truth for games. Legacy records without gameId remain Free Fire.
+const games = [
+  { id: "free-fire", name: "Free Fire", shortName: "FF", enabled: true, currency: "Diamonds", uidLabel: "Free Fire Player UID" },
+  { id: "call-of-duty", name: "Call of Duty Mobile", shortName: "CODM", enabled: true, currency: "COD Points", uidLabel: "Call of Duty Player UID / Player ID" }
+];
+
+function getGame(gameId) { return games.find((game) => game.id === gameId) || games[0]; }
+function getListingGameId(listing) { return listing.gameId || "free-fire"; }
+function getOrderGameId(order) { return order.gameId || "free-fire"; }
 
 
 const defaultSiteSettings = {
@@ -332,6 +343,7 @@ function createListingImage(listing, className) {
 }
 
 function createOrderCard(order, options = {}) {
+  const game = getGame(getOrderGameId(order));
   const card = document.createElement("div");
   const title = document.createElement("h3");
   const price = Number(order.price || 0);
@@ -346,6 +358,7 @@ function createOrderCard(order, options = {}) {
     appendOrderField(card, "UID", order.gameUID || "N/A");
   }
 
+  appendOrderField(card, "Game", game.name);
   appendOrderField(card, "Type", order.orderType === "account-purchase" ? "ACCOUNT PURCHASE" : "TOP-UP ORDER");
   appendOrderField(card, "Item", order.item || "N/A");
   appendOrderField(card, "Price", `₦${price.toLocaleString()}`);
@@ -483,9 +496,9 @@ function createMarketplaceCard(listing, isFeatured = false) {
 
   card.className = isFeatured ? "market-card featured" : "market-card";
   badge.className = isFeatured ? "badge premium" : "badge";
-  badge.textContent = isFeatured ? "⭐ FEATURED" : "APPROVED";
+  badge.textContent = `${isFeatured ? "⭐ FEATURED · " : ""}${getGame(getListingGameId(listing)).shortName} · ${listing.rank || "ACCOUNT"}`;
   title.textContent = listing.title || "Gaming Account";
-  details.textContent = `Region: ${listing.region || "N/A"} • Rank: ${listing.rank || "N/A"} • Level: ${listing.level || "N/A"}`;
+  details.textContent = `${getGame(getListingGameId(listing)).name} · ${listing.region || "N/A"} · ${listing.rank || "N/A"} · Level ${listing.level || "N/A"}`;
   description.textContent = listing.description || "No description provided.";
   price.textContent = formatNaira(listing.price);
   viewButton.type = "button";
@@ -508,6 +521,7 @@ function createMarketplaceCard(listing, isFeatured = false) {
 function renderMarketplaceListings() {
   const searchTerm = document.getElementById("marketplace-search")?.value.toLowerCase().trim() || "";
   const regionFilter = document.getElementById("region-filter")?.value || "";
+  const gameFilter = document.getElementById("game-filter")?.value || "";
   const rankFilter = document.getElementById("rank-filter")?.value.toLowerCase() || "";
   const priceFilter = document.getElementById("price-filter")?.value || "";
   const sortFilter = document.getElementById("sort-filter")?.value || "newest";
@@ -522,15 +536,16 @@ function renderMarketplaceListings() {
       listingRank.includes(searchTerm) ||
       String(listing.region || "").toLowerCase().includes(searchTerm);
 
+    const matchesGame = !gameFilter || getListingGameId(listing) === gameFilter;
     const matchesRegion = !regionFilter || listing.region === regionFilter;
     const matchesRank = !rankFilter || listingRank.includes(rankFilter);
     const matchesPrice = isPriceInRange(Number(listing.price || 0), priceFilter);
 
-    return matchesSearch && matchesRegion && matchesRank && matchesPrice;
+    return matchesSearch && matchesGame && matchesRegion && matchesRank && matchesPrice;
   });
 
   const sortedListings = sortListings(filteredListings, sortFilter);
-  const featuredListings = sortedListings.filter((listing) => Number(listing.price || 0) >= 100000).slice(0, 3);
+  const featuredListings = sortedListings.slice(0, 3);
   const featuredGrid = document.getElementById("featured-grid");
   const marketplaceGrid = document.getElementById("marketplace-grid");
 
@@ -829,7 +844,7 @@ async function loadMarketplaceListings() {
   if (!marketplaceGrid && !featuredGrid) return;
 
   try {
-    const listingsQuery = query(collection(db, "listings"), orderBy("createdAt", "desc"));
+    const listingsQuery = query(collection(db, "listings"), where("status", "==", "approved"));
     const snapshot = await getDocs(listingsQuery);
 
     allListings = [];
@@ -838,6 +853,16 @@ async function loadMarketplaceListings() {
     });
 
     renderMarketplaceListings();
+    const homeGrid = document.getElementById("home-featured-grid");
+    if (homeGrid) {
+      homeGrid.replaceChildren();
+      const featured = sortListings(allListings.filter(isListingApproved), "newest").slice(0, 3);
+      if (!featured.length) {
+        const empty = document.createElement("p");
+        empty.textContent = "No approved accounts are available yet. Check back soon.";
+        homeGrid.appendChild(empty);
+      } else featured.forEach((listing) => homeGrid.appendChild(createMarketplaceCard(listing, true)));
+    }
   } catch (err) {
     console.error("LOAD MARKETPLACE LISTINGS ERROR:", err);
     if (marketplaceGrid) {
@@ -863,7 +888,7 @@ function initializeMarketplaceControls() {
 
   if (controls?.dataset.listenersBound === "true") return;
 
-  ["marketplace-search", "region-filter", "price-filter", "rank-filter", "sort-filter"].forEach((id) => {
+  ["marketplace-search", "game-filter", "region-filter", "price-filter", "rank-filter", "sort-filter"].forEach((id) => {
     const element = document.getElementById(id);
     if (element) {
       element.addEventListener(id === "marketplace-search" ? "input" : "change", renderMarketplaceListings);
@@ -871,7 +896,7 @@ function initializeMarketplaceControls() {
   });
 
   document.getElementById("clear-filters")?.addEventListener("click", () => {
-    ["marketplace-search", "region-filter", "price-filter", "rank-filter", "sort-filter"].forEach((id) => {
+    ["marketplace-search", "game-filter", "region-filter", "price-filter", "rank-filter", "sort-filter"].forEach((id) => {
       const element = document.getElementById(id);
       if (element) element.value = id === "sort-filter" ? "newest" : "";
     });
@@ -899,7 +924,7 @@ window.viewAccountListing = (listingId) => {
 
   title.textContent = listing.title || "Gaming Account";
   details.className = "account-detail-grid";
-  [["Region", listing.region], ["Rank", listing.rank], ["Level", listing.level], ["Status", listing.status]].forEach(([label, value]) => {
+  [["Game", getGame(getListingGameId(listing)).name], ["Region", listing.region], ["Rank", listing.rank], ["Level", listing.level], ["Availability", listing.status === "approved" ? "Available" : listing.status]].forEach(([label, value]) => {
     const item = document.createElement("p");
     const strong = document.createElement("strong");
     strong.textContent = `${label}:`;
@@ -1062,6 +1087,7 @@ window.confirmAccountPurchase = async () => {
         customerEmail: user.email,
         googleEmail: user.email,
         listingId: listing.id,
+        gameId: getListingGameId(latestListing),
         item: latestListing.title || "Gaming Account",
         price: Number(latestListing.price || 0),
         status: "processing",
@@ -1283,6 +1309,7 @@ async function loadAdminOrders() {
   const searchInput = document.getElementById("search-orders");
   const statusFilter = document.getElementById("status-filter");
   const orderTypeFilter = document.getElementById("order-type-filter");
+  const gameFilter = document.getElementById("admin-game-filter");
 
   if (!ordersList) return;
 
@@ -1325,6 +1352,7 @@ async function loadAdminOrders() {
       const search = searchInput ? searchInput.value.toLowerCase() : "";
       const status = statusFilter ? statusFilter.value : "all";
       const orderType = orderTypeFilter ? orderTypeFilter.value : "all";
+      const gameId = gameFilter ? gameFilter.value : "all";
 
       const filtered = orders.filter((order) => {
         const matchesSearch =
@@ -1339,7 +1367,8 @@ async function loadAdminOrders() {
         const matchesOrderType =
           orderType === "all" || (order.orderType || "topup") === orderType;
 
-        return matchesSearch && matchesStatus && matchesOrderType;
+        const matchesGame = gameId === "all" || getOrderGameId(order) === gameId;
+        return matchesSearch && matchesStatus && matchesOrderType && matchesGame;
       });
 
       ordersList.replaceChildren();
@@ -1374,6 +1403,9 @@ async function loadAdminOrders() {
 
       if (orderTypeFilter) {
         orderTypeFilter.addEventListener("change", renderOrders);
+      }
+      if (gameFilter) {
+        gameFilter.addEventListener("change", renderOrders);
       }
 
       ordersList.dataset.listenersBound = "true";
@@ -1523,6 +1555,7 @@ function createSellerListingCard(listing) {
   title.textContent = listing.title || "Gaming Account";
   card.appendChild(title);
 
+  appendListingField(card, "Game", getGame(getListingGameId(listing)).name);
   appendListingField(card, "Price", formatNaira(listing.price));
   appendListingField(card, "Region", listing.region);
   appendListingField(card, "Rank", listing.rank);
@@ -1915,6 +1948,10 @@ onAuthStateChanged(auth, async (user) => {
     }
 
     lockTopupForGuest();
+    // The landing page can safely show approved public listings without a session.
+    if (document.getElementById("home-featured-grid") && isMarketplaceAvailable()) {
+      loadMarketplaceListings();
+    }
   }
   } catch (err) {
     console.error("AUTH STATE HANDLER ERROR:", err);
@@ -1950,6 +1987,7 @@ window.openOrderModal = async (item, price) => {
 
   currentOrder.item = item;
   currentOrder.price = numPrice;
+  currentOrder.gameId = currentOrder.gameId || "free-fire";
 
   const summary = document.getElementById("order-summary");
 
@@ -1985,10 +2023,19 @@ window.closeModal = () => {
   }
 };
 
+window.openTopupPackageOrder = async (button) => {
+  currentOrder.gameId = button?.dataset?.game || "free-fire";
+  const item = button?.dataset?.item || "Game Top Up";
+  const price = Number(button?.dataset?.price);
+  if (!Number.isFinite(price) || price <= 0) return alert("Invalid top-up package ⚡");
+  openOrderModal(item, price);
+};
+
 window.openDiamondPackageOrder = async (button) => {
   await ensureSiteSettingsLoaded();
 
   const amount = Number(button?.dataset?.diamonds);
+  currentOrder.gameId = "free-fire";
   const item = button?.dataset?.item || `${amount} Diamonds`;
 
   if (!Number.isInteger(amount) || amount <= 0) {
@@ -2049,6 +2096,7 @@ window.completeOrder = async () => {
     const orderData = {
       orderId: orderId,
       orderType: "topup",
+      gameId: currentOrder.gameId || "free-fire",
       userId: user.uid,
       customerName: user.displayName,
       customerEmail: email,
@@ -2092,6 +2140,23 @@ window.completeOrder = async () => {
     );
   }
 };
+
+function initializeTopupGameSelector() {
+  const choices = document.querySelectorAll(".game-choice");
+  if (!choices.length) return;
+  const setGame = (gameId) => {
+    const game = getGame(gameId);
+    choices.forEach((choice) => choice.classList.toggle("active", choice.dataset.game === gameId));
+    document.querySelectorAll(".diamond-card:not(.cod-product)").forEach((card) => card.classList.toggle("hidden", gameId !== "free-fire"));
+    document.querySelectorAll(".cod-product").forEach((card) => card.classList.toggle("hidden", gameId !== "call-of-duty"));
+    document.querySelector(".custom-diamond-box")?.classList.toggle("hidden", gameId !== "free-fire");
+    const uid = document.getElementById("uid"); if (uid) uid.placeholder = `Enter ${game.uidLabel}`;
+    const note = document.getElementById("topup-game-note"); if (note) note.textContent = `${game.name} · ${game.currency} · Enter your ${game.uidLabel}`;
+  };
+  choices.forEach((choice) => choice.addEventListener("click", () => setGame(choice.dataset.game)));
+  setGame(new URLSearchParams(location.search).get("game") === "call-of-duty" ? "call-of-duty" : "free-fire");
+}
+initializeTopupGameSelector();
 
 window.toggleMobileMenu = () => {
   const nav = document.querySelector("nav");
@@ -2227,6 +2292,7 @@ window.submitAccountListing = async () => {
     return;
   }
 
+  const gameId = document.getElementById("seller-game")?.value || "free-fire";
   const title = document.getElementById("seller-account-title").value.trim();
   const region = document.getElementById("seller-region").value.trim();
   const price = document.getElementById("seller-price").value.trim();
@@ -2257,6 +2323,7 @@ window.submitAccountListing = async () => {
       sellerId: user.uid,
       sellerName: user.displayName,
       sellerEmail: user.email,
+      gameId,
       title,
       region,
       price: numericPrice,
@@ -2319,3 +2386,10 @@ window.submitAccountListing = async () => {
     );
   }
 };
+
+// Lightweight client-side order filter for the My Orders page.
+document.getElementById("order-filter")?.addEventListener("change", (event) => {
+  document.querySelectorAll("#history-list .order-card").forEach((card) => {
+    card.hidden = event.target.value !== "all" && !card.textContent.includes(event.target.value === "topup" ? "TOP-UP ORDER" : "ACCOUNT PURCHASE");
+  });
+});

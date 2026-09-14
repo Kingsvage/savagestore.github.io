@@ -21,6 +21,10 @@ service cloud.firestore {
       return value is number && value > 0;
     }
 
+    function validGameId() {
+      return !('gameId' in request.resource.data) || request.resource.data.gameId in ['free-fire', 'call-of-duty'];
+    }
+
     function validOrderStatus(status) {
       return status in ['processing', 'delivered', 'failed'];
     }
@@ -42,6 +46,7 @@ service cloud.firestore {
         request.resource.data.userId == request.auth.uid &&
         request.resource.data.status == 'processing' &&
         validMoney(request.resource.data.price) &&
+        validGameId() &&
         request.resource.data.gameUID is string &&
         !('listingId' in request.resource.data);
     }
@@ -52,6 +57,7 @@ service cloud.firestore {
         request.resource.data.status == 'processing' &&
         request.resource.data.listingId is string &&
         request.resource.data.orderId == orderId &&
+        validGameId() &&
         exists(listingPath(request.resource.data.listingId)) &&
         get(listingPath(request.resource.data.listingId)).data.status == 'approved' &&
         request.resource.data.price == get(listingPath(request.resource.data.listingId)).data.price &&
@@ -146,11 +152,12 @@ service cloud.firestore {
         request.resource.data.level is string &&
         request.resource.data.description is string &&
         request.resource.data.contact is string &&
-        validMoney(request.resource.data.price);
+        validMoney(request.resource.data.price) &&
+        validGameId();
 
       allow read: if isAdmin() ||
         (signedIn() && resource.data.sellerId == request.auth.uid) ||
-        (signedIn() && resource.data.status == 'approved');
+        resource.data.status == 'approved';
 
       allow update: if adminListingUpdate() ||
         sellerCancelPendingListing() ||

@@ -362,7 +362,15 @@ function createOrderCard(order, options = {}) {
   appendOrderField(card, "Type", order.orderType === "account-purchase" ? "ACCOUNT PURCHASE" : "TOP-UP ORDER");
   appendOrderField(card, "Item", order.item || "N/A");
   appendOrderField(card, "Price", `₦${price.toLocaleString()}`);
-  appendOrderField(card, "Status", order.status || "pending");
+  const statusRow = document.createElement("p");
+  const statusLabel = document.createElement("strong");
+  const statusBadge = document.createElement("span");
+  const status = order.status || "processing";
+  statusLabel.textContent = "Status: ";
+  statusBadge.className = `status-badge status-${status}`;
+  statusBadge.textContent = status.toUpperCase();
+  statusRow.append(statusLabel, statusBadge);
+  card.appendChild(statusRow);
 
   if (order.listingId) {
     appendOrderField(card, "Listing ID", order.listingId);
@@ -493,6 +501,8 @@ function createMarketplaceCard(listing, isFeatured = false) {
   const description = document.createElement("p");
   const price = document.createElement("h2");
   const viewButton = document.createElement("button");
+  const buyButton = document.createElement("button");
+  const actions = document.createElement("div");
 
   card.className = isFeatured ? "market-card featured" : "market-card";
   badge.className = isFeatured ? "badge premium" : "badge";
@@ -504,6 +514,12 @@ function createMarketplaceCard(listing, isFeatured = false) {
   viewButton.type = "button";
   viewButton.textContent = "VIEW ACCOUNT";
   viewButton.addEventListener("click", () => window.viewAccountListing(listing.id));
+  buyButton.type = "button";
+  buyButton.className = "card-buy-button";
+  buyButton.textContent = "BUY";
+  buyButton.addEventListener("click", () => window.openAccountPurchase(listing.id));
+  actions.className = "account-card-actions";
+  actions.append(viewButton, buyButton);
 
   card.append(
     badge,
@@ -512,14 +528,16 @@ function createMarketplaceCard(listing, isFeatured = false) {
     details,
     description,
     price,
-    viewButton
+    actions
   );
 
   return card;
 }
 
 function renderMarketplaceListings() {
-  const searchTerm = document.getElementById("marketplace-search")?.value.toLowerCase().trim() || "";
+  const searchInput = document.getElementById("marketplace-search");
+  if (searchInput && !searchInput.value && new URLSearchParams(location.search).get("search")) searchInput.value = new URLSearchParams(location.search).get("search");
+  const searchTerm = searchInput?.value.toLowerCase().trim() || "";
   const regionFilter = document.getElementById("region-filter")?.value || "";
   const gameFilter = document.getElementById("game-filter")?.value || "";
   const rankFilter = document.getElementById("rank-filter")?.value.toLowerCase() || "";
@@ -1788,6 +1806,7 @@ onAuthStateChanged(auth, async (user) => {
       ordersLink.style.display = "inline-block";
     }
 
+    setElementText(document.getElementById("nav-user-label"), user.displayName || user.email || "Account");
     if (navLoginBtn) {
       navLoginBtn.textContent = "LOGOUT";
       navLoginBtn.onclick = window.logout;
@@ -1914,8 +1933,9 @@ onAuthStateChanged(auth, async (user) => {
       marketplaceLoginBox.classList.remove("hidden");
     }
 
+    setElementText(document.getElementById("nav-user-label"), "Guest");
     if (navLoginBtn) {
-      navLoginBtn.textContent = "LOGIN";
+      navLoginBtn.textContent = "LOGIN / SIGN UP";
       navLoginBtn.onclick = window.signInWithGoogle;
     }
 
@@ -2159,7 +2179,7 @@ function initializeTopupGameSelector() {
 initializeTopupGameSelector();
 
 window.toggleMobileMenu = () => {
-  const nav = document.querySelector("nav");
+  const nav = document.querySelector(".top-navbar .primary-nav") || document.querySelector("header nav");
 
   if (nav) {
     nav.classList.toggle("active");

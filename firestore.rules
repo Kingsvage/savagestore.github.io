@@ -157,7 +157,7 @@ service cloud.firestore {
 
       allow read: if isAdmin() ||
         (signedIn() && resource.data.sellerId == request.auth.uid) ||
-        (signedIn() && resource.data.status == 'approved');
+        resource.data.status == 'approved';
 
       allow update: if adminListingUpdate() ||
         sellerCancelPendingListing() ||

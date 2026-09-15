@@ -16,7 +16,7 @@
     rel="stylesheet"
   >
 
-  <link rel="stylesheet" href="style.css?v=47">
+  <link rel="stylesheet" href="style.css?v=62">
 
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 </head>
@@ -76,7 +76,7 @@
         </h1>
 
         <p>
-          View your Free Fire top-up orders, payment status, delivery status, and order history.
+          View your Free Fire and Call of Duty top-ups, account purchases, delivery status, and complete order history.
         </p>
 
         <div class="hero-buttons">
@@ -109,6 +109,7 @@
       <h2>ORDER HISTORY</h2>
     </div>
 
+    <div class="order-filter-wrap"><label for="order-filter">SHOW</label><select id="order-filter"><option value="all">All Orders</option><option value="topup">Top Ups</option><option value="account-purchase">Account Purchases</option></select></div>
     <div id="history-list" class="history-list">
       <p>Loading your orders...</p>
     </div>
@@ -156,7 +157,7 @@
 
   <div class="toast hidden" id="toast"></div>
 
-  <script type="module" src="./script.js?v=55"></script>
+  <script type="module" src="./script.js?v=62"></script>
 
 </body>
 </html>

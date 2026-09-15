@@ -16,7 +16,7 @@
     rel="stylesheet"
   >
 
-  <link rel="stylesheet" href="style.css?v=47">
+  <link rel="stylesheet" href="style.css?v=62">
 
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 </head>
@@ -69,14 +69,14 @@
         </span>
 
         <h1>
-          BUY GAMING
-          <span>ACCOUNTS</span>
+          GAMING ACCOUNT
+          <span>MARKETPLACE</span>
           <br>
           THROUGH ADMIN
         </h1>
 
         <p>
-          Browse approved account listings. To buy any account, chat Savage Store admin directly for verification and payment instructions.
+          Find your next account from approved Free Fire and Call of Duty listings. Create a tracked purchase order in a secure, admin-managed flow.
         </p>
 
         <div class="hero-buttons">
@@ -135,6 +135,12 @@
       </div>
 
       <div class="filter-controls">
+        <select id="game-filter">
+          <option value="">All Games</option>
+          <option value="free-fire">Free Fire</option>
+          <option value="call-of-duty">Call of Duty</option>
+        </select>
+
         <select id="region-filter">
           <option value="">All Regions</option>
           <option value="Nigeria">Nigeria</option>
@@ -229,7 +235,7 @@
 
   <div class="toast hidden" id="toast"></div>
 
-  <script type="module" src="./script.js?v=55"></script>
+  <script type="module" src="./script.js?v=62"></script>
 
 </body>
 </html>

@@ -16,7 +16,7 @@
     rel="stylesheet"
   >
 
-  <link rel="stylesheet" href="style.css?v=47">
+  <link rel="stylesheet" href="style.css?v=62">
 
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 </head>
@@ -76,7 +76,7 @@
         </h1>
 
         <p>
-          Submit your Free Fire account details. Savage Store admin will review your listing before it appears in the marketplace.
+          Choose Free Fire or Call of Duty, share the account details, and our admin team will review your listing before it appears in the marketplace.
         </p>
 
       </div>
@@ -108,11 +108,13 @@
     </div>
 
     <div class="seller-form-box hidden" id="seller-form-box">
+      <label for="seller-game">SELECT GAME</label>
+      <select id="seller-game"><option value="free-fire">Free Fire</option><option value="call-of-duty">Call of Duty Mobile</option></select>
 
       <input
         type="text"
         id="seller-account-title"
-        placeholder="Account title e.g Heroic Free Fire Account"
+        placeholder="Account title e.g Heroic Level 65 Account"
       >
 
       <input
@@ -143,7 +145,7 @@
 
       <textarea
         id="seller-description"
-        placeholder="Describe account skins, bundles, weapons, pets, UID quality, etc."
+        placeholder="Describe account inventory, progression, loadout and other important details."
       ></textarea>
 
       <input
@@ -229,7 +231,7 @@
 
   <div class="toast hidden" id="toast"></div>
 
-  <script type="module" src="./script.js?v=55"></script>
+  <script type="module" src="./script.js?v=62"></script>
 
 </body>
 </html>

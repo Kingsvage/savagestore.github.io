@@ -21,7 +21,7 @@
     rel="stylesheet"
   >
 
-  <link rel="stylesheet" href="style.css?v=31">
+  <link rel="stylesheet" href="style.css?v=60">
 
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 </head>
@@ -43,11 +43,12 @@
       </div>
 
       <nav>
-        <a href="index.html">Home</a>
-        <a href="topup.html">Top Up</a>
-        <a href="marketplace.html">Marketplace</a>
-        <a href="sell.html">Sell Account</a>
-        <a href="orders.html">My Orders</a>
+        <a href="index.html">🏠 Home</a>
+        <a href="topup.html">💎 Top Up</a>
+        <a href="marketplace.html">🛒 Marketplace</a>
+        <a href="sell.html">💰 Sell Account</a>
+        <a href="orders.html">📦 My Orders</a>
+        <a href="profile.html">👤 Profile</a>
        <a href="admin.html" id="admin-link" style="display:none;">
   Admin
 </a>
@@ -69,7 +70,7 @@
       <div class="hero-left">
 
         <span class="top-tag">
-          💎 FREE FIRE DIAMOND TOP UP
+          💎 <span data-game-name>Free Fire</span> TOP UP
         </span>
 
         <h1>
@@ -82,6 +83,11 @@
         <p>
           Login to view diamond prices, enter your Free Fire UID, make payment, and receive order confirmation.
         </p>
+
+        <div class="game-selector" role="group" aria-label="Select game">
+          <button type="button" class="game-select active" data-game-select="free-fire" aria-pressed="true" onclick="selectGame('free-fire')">Free Fire</button>
+          <button type="button" class="game-select" data-game-select="call-of-duty" aria-pressed="false" onclick="selectGame('call-of-duty')">COD Mobile</button>
+        </div>
 
         <div class="hero-buttons">
 
@@ -187,11 +193,13 @@
 
         <h3>100 Diamonds</h3>
 
-        <p class="price">₦1,600</p>
+        <p class="price" data-diamond-price>₦1,600</p>
 
         <button
           type="button"
-          onclick="openOrderModal('100 Diamonds',1600)"
+          data-diamonds="100"
+          data-item="100 Diamonds"
+          onclick="openDiamondPackageOrder(this)"
         >
           BUY NOW
         </button>
@@ -205,11 +213,13 @@
 
         <h3>210 Diamonds</h3>
 
-        <p class="price">₦3,200</p>
+        <p class="price" data-diamond-price>₦3,200</p>
 
         <button
           type="button"
-          onclick="openOrderModal('210 Diamonds',3200)"
+          data-diamonds="210"
+          data-item="210 Diamonds"
+          onclick="openDiamondPackageOrder(this)"
         >
           BUY NOW
         </button>
@@ -225,11 +235,13 @@
 
         <h3>530 Diamonds</h3>
 
-        <p class="price">₦7,900</p>
+        <p class="price" data-diamond-price>₦7,900</p>
 
         <button
           type="button"
-          onclick="openOrderModal('530 Diamonds',7900)"
+          data-diamonds="530"
+          data-item="530 Diamonds"
+          onclick="openDiamondPackageOrder(this)"
         >
           BUY NOW
         </button>
@@ -243,11 +255,13 @@
 
         <h3>1080 Diamonds</h3>
 
-        <p class="price">₦15,900</p>
+        <p class="price" data-diamond-price>₦15,900</p>
 
         <button
           type="button"
-          onclick="openOrderModal('1080 Diamonds',15900)"
+          data-diamonds="1080"
+          data-item="1080 Diamonds"
+          onclick="openDiamondPackageOrder(this)"
         >
           BUY NOW
         </button>
@@ -263,11 +277,13 @@
 
         <h3>2200 Diamonds</h3>
 
-        <p class="price">₦31,500</p>
+        <p class="price" data-diamond-price>₦31,500</p>
 
         <button
           type="button"
-          onclick="openOrderModal('2200 Diamonds',31500)"
+          data-diamonds="2200"
+          data-item="2200 Diamonds"
+          onclick="openDiamondPackageOrder(this)"
         >
           BUY NOW
         </button>
@@ -313,7 +329,7 @@
     <p>Savage Store © 2026</p>
 
     <span>
-      Free Fire Top Up • Fast Processing • Secure Orders
+      Multi-game Top Up • Fast Processing • Secure Orders
     </span>
 
   </footer>
@@ -346,7 +362,7 @@
       <input
         type="text"
         id="uid"
-        placeholder="Enter Free Fire UID"
+        placeholder="Enter player UID"
       >
 
       <input
@@ -387,7 +403,7 @@
 
           <br><br>
 
-          You must use your exact Free Fire UID as the payment narration/description when making transfer.
+          You must use your exact player UID as the payment narration/description when making transfer.
 
           <br><br>
 
@@ -410,7 +426,7 @@
 
   <div class="toast hidden" id="toast"></div>
 
-  <script type="module" src="./script.js?v=51"></script>
+  <script type="module" src="./script.js?v=60"></script>
 
 </body>
 </html>

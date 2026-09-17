@@ -16,7 +16,7 @@ export const firebaseConfig = {
 
 // Email.js Configuration
 export const emailConfig = {
-  serviceId: "service_oabtkuc",
+  serviceId: "service_3ut8kuo",
   templateId: "template_jeabwaa",
   publicKey: "VGMXshIsMZlghPhDW"
 };
@@ -24,6 +24,5 @@ export const emailConfig = {
 // Admin Configuration
 export const adminConfig = {
   emails: ["chukwumachidozie18@gmail.com"],
-  accountNumber: "7071048081",
-  whatsappNumber: "2347120004769"
+  accountNumber: "7071048081"
 };

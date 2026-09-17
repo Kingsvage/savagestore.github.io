@@ -70,14 +70,14 @@
         </span>
 
         <h1>
-          BUY GAMING
-          <span>ACCOUNTS</span>
+          GAMING ACCOUNT
+          <span>MARKETPLACE</span>
           <br>
           THROUGH ADMIN
         </h1>
 
         <p>
-          Browse approved account listings. To buy any account, chat Savage Store admin directly for verification and payment instructions.
+          Find your next account from approved Free Fire and Call of Duty listings. Create a tracked purchase order in a secure, admin-managed flow.
         </p>
 
         <div class="hero-buttons">
@@ -131,11 +131,17 @@
         <input
           type="text"
           id="marketplace-search"
-          placeholder="🔍 Search by title, seller name, region..."
+          placeholder="🔍 Search by title, rank, or region..."
         >
       </div>
 
       <div class="filter-controls">
+        <select id="game-filter">
+          <option value="">All Games</option>
+          <option value="free-fire">Free Fire</option>
+          <option value="call-of-duty">Call of Duty</option>
+        </select>
+
         <select id="region-filter">
           <option value="">All Regions</option>
           <option value="Nigeria">Nigeria</option>
@@ -155,12 +161,21 @@
           <option value="500000">₦500,000+</option>
         </select>
 
-        <select id="level-filter">
-          <option value="">All Levels</option>
-          <option value="1-20">Level 1-20</option>
-          <option value="21-40">Level 21-40</option>
-          <option value="41-60">Level 41-60</option>
-          <option value="61">Level 61+</option>
+        <select id="rank-filter">
+          <option value="">All Ranks</option>
+          <option value="Bronze">Bronze</option>
+          <option value="Silver">Silver</option>
+          <option value="Gold">Gold</option>
+          <option value="Platinum">Platinum</option>
+          <option value="Diamond">Diamond</option>
+          <option value="Heroic">Heroic</option>
+          <option value="Grandmaster">Grandmaster</option>
+        </select>
+
+        <select id="sort-filter">
+          <option value="newest">Newest listings</option>
+          <option value="price-asc">Price: Low → High</option>
+          <option value="price-desc">Price: High → Low</option>
         </select>
 
         <button id="clear-filters" class="secondary-btn">Clear Filters</button>
@@ -200,6 +215,24 @@
     </span>
 
   </footer>
+
+  <div class="modal hidden" id="account-detail-modal">
+    <div class="modal-box account-modal-box">
+      <button type="button" class="close-btn" onclick="closeAccountDetails()">✕</button>
+      <div id="account-detail-content"></div>
+    </div>
+  </div>
+
+  <div class="modal hidden" id="account-purchase-modal">
+    <div class="modal-box account-modal-box">
+      <button type="button" class="close-btn" onclick="closeAccountPurchase()">✕</button>
+      <h2>Confirm Account Purchase</h2>
+      <div class="summary-box" id="account-purchase-summary"></div>
+      <button type="button" class="primary-btn full-btn" onclick="confirmAccountPurchase()">
+        CONFIRM PURCHASE ⚡
+      </button>
+    </div>
+  </div>
 
   <div class="toast hidden" id="toast"></div>
 

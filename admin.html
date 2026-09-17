@@ -117,7 +117,7 @@
       <input
         type="text"
         id="search-orders"
-        placeholder="Search Order ID / Email / UID"
+        placeholder="Search Order ID / Email / UID / Account"
       >
 
       <select id="status-filter">
@@ -127,10 +127,27 @@
         <option value="failed">Failed</option>
       </select>
 
+      <select id="admin-game-filter"><option value="all">All Games</option><option value="free-fire">Free Fire</option><option value="call-of-duty">Call of Duty</option></select>
+
+      <select id="order-type-filter">
+        <option value="all">All Types</option>
+        <option value="topup">Top-up Orders</option>
+        <option value="account-purchase">Account Purchases</option>
+      </select>
+
     </div>
 
     <div id="orders-list" class="orders-list">
       <p>Loading orders...</p>
+    </div>
+
+    <div class="section-title">
+      <span>ACCOUNT LISTINGS</span>
+      <h2>LISTING APPROVALS</h2>
+    </div>
+
+    <div id="admin-listings-list" class="orders-list">
+      <p>Loading listings...</p>
     </div>
 
   </section>
@@ -185,17 +202,7 @@
 
   </section>
 
-  <section class="admin-section hidden" id="admin-listings-section">
-
-  <h2>Pending Account Listings</h2>
-
-  <div id="listings-list">
-
-    <p>Loading listings...</p>
-
-  </div>
-
-</section>
+  <section class="admin-section hidden" id="admin-listings-section"></section>
 
   <section class="admin-section" id="admin-denied">
 

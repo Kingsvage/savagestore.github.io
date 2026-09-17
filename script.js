@@ -23,7 +23,7 @@ import {
   orderBy,
   where,
   serverTimestamp,
-  onSnapshot
+  runTransaction
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
 import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js";
@@ -36,13 +36,9 @@ const db = getFirestore(app);
 const functions = getFunctions(app, "us-central1");
 const provider = new GoogleAuthProvider();
 
-const authPersistenceReady = setPersistence(auth, browserLocalPersistence)
-  .then(() => {
-    console.log("Auth persistence initialized");
-  })
-  .catch((err) => {
-    console.error("AUTH PERSISTENCE ERROR:", err);
-  });
+const authPersistenceReady = setPersistence(auth, browserLocalPersistence).catch((err) => {
+  console.error("AUTH PERSISTENCE ERROR:", err);
+});
 
 provider.setCustomParameters({
   prompt: "select_account"
@@ -50,70 +46,49 @@ provider.setCustomParameters({
 
 const emailClient = window.emailjs || null;
 
-console.log("EmailJS loaded:", Boolean(emailClient));
-
 if (emailClient) {
   emailClient.init(emailConfig.publicKey);
-  console.log("EmailJS initialized");
 } else {
   console.warn("EmailJS SDK is unavailable; email notifications are disabled.");
 }
 
-async function sendEmail(emailName, templateParams) {
+async function sendEmail(templateParams) {
   if (!emailClient) {
     throw new Error("EmailJS SDK is unavailable");
   }
 
-  console.log(`EmailJS sending: ${emailName}`, {
-    serviceId: emailConfig.serviceId,
-    templateId: emailConfig.templateId,
-    toEmail: templateParams.to_email
-  });
-
-  try {
-    const response = await emailClient.send(
-      emailConfig.serviceId,
-      emailConfig.templateId,
-      templateParams
-    );
-
-    console.log(`EmailJS success: ${emailName}`, {
-      status: response.status,
-      text: response.text
-    });
-
-    return response;
-  } catch (err) {
-    console.error(`EmailJS error: ${emailName}`, {
-      status: err.status,
-      text: err.text,
-      message: err.message
-    });
-
-    throw err;
-  }
+  return emailClient.send(
+    emailConfig.serviceId,
+    emailConfig.templateId,
+    templateParams
+  );
 }
 
 let currentOrder = {
   item: "",
   price: 0,
-  gameId: "free-fire",
-  offerId: "",
-  player: null
+  gameId: "free-fire"
 };
-
-const GAMES = {
-  "free-fire": { name: "Free Fire", supportsCustomDiamonds: true },
-  "call-of-duty": { name: "Call of Duty Mobile", supportsCustomDiamonds: false }
-};
-let selectedGameId = "free-fire";
-let marketplaceUnsubscribe = null;
-let marketplaceFiltersBound = false;
 
 const DEFAULT_LISTING_IMAGE =
   "https://images.unsplash.com/photo-1542751371-adc38448a05e?q=80&w=1200&auto=format&fit=crop";
 
-let siteSettings = {
+// Store all listings for filtering
+let allListings = [];
+let selectedAccountListing = null;
+
+// Single source of truth for games. Legacy records without gameId remain Free Fire.
+const games = [
+  { id: "free-fire", name: "Free Fire", shortName: "FF", enabled: true, currency: "Diamonds", uidLabel: "Free Fire Player UID" },
+  { id: "call-of-duty", name: "Call of Duty Mobile", shortName: "CODM", enabled: true, currency: "COD Points", uidLabel: "Call of Duty Player UID / Player ID" }
+];
+
+function getGame(gameId) { return games.find((game) => game.id === gameId) || games[0]; }
+function getListingGameId(listing) { return listing.gameId || "free-fire"; }
+function getOrderGameId(order) { return order.gameId || "free-fire"; }
+
+
+const defaultSiteSettings = {
   diamondRate: 15,
   topupEnabled: true,
   marketplaceEnabled: true,
@@ -121,8 +96,70 @@ let siteSettings = {
   supportWhatsapp: "2347120004769"
 };
 
-// Store all listings for filtering
-let allListings = [];
+let siteSettings = {
+  ...defaultSiteSettings
+};
+
+function normalizeBoolean(value, fallback) {
+  return typeof value === "boolean" ? value : fallback;
+}
+
+function normalizePositiveNumber(value, fallback) {
+  const numericValue = Number(value);
+
+  return Number.isFinite(numericValue) && numericValue > 0
+    ? numericValue
+    : fallback;
+}
+
+function normalizeString(value, fallback) {
+  return typeof value === "string" && value.trim()
+    ? value.trim()
+    : fallback;
+}
+
+async function loadSiteSettings() {
+  try {
+    const settingsSnap = await getDoc(doc(db, "settings", "config"));
+
+    if (settingsSnap.exists()) {
+      const data = settingsSnap.data();
+
+      siteSettings = {
+        ...siteSettings,
+        diamondRate: normalizePositiveNumber(
+          data.diamondRate,
+          siteSettings.diamondRate
+        ),
+        topupEnabled: normalizeBoolean(
+          data.topupEnabled,
+          siteSettings.topupEnabled
+        ),
+        marketplaceEnabled: normalizeBoolean(
+          data.marketplaceEnabled,
+          siteSettings.marketplaceEnabled
+        ),
+        maintenanceMode: normalizeBoolean(
+          data.maintenanceMode,
+          siteSettings.maintenanceMode
+        ),
+        supportWhatsapp: normalizeString(
+          data.supportWhatsapp,
+          siteSettings.supportWhatsapp
+        )
+      };
+    }
+
+    console.log("SITE SETTINGS LOADED:", siteSettings);
+  } catch (err) {
+    console.error("LOAD SITE SETTINGS ERROR:", err);
+  }
+
+  applySiteSettings();
+  return siteSettings;
+}
+
+const siteSettingsReady = loadSiteSettings();
 
 function normalizeBoolean(value, fallback) {
   return typeof value === "boolean" ? value : fallback;
@@ -199,14 +236,9 @@ function isMarketplaceAvailable() {
   return !siteSettings.maintenanceMode && siteSettings.marketplaceEnabled;
 }
 
-async function ensureSiteSettingsLoaded(timeoutMs = 3000) {
+async function ensureSiteSettingsLoaded() {
   try {
-    await Promise.race([
-      siteSettingsReady,
-      new Promise((resolve) => {
-        setTimeout(resolve, timeoutMs);
-      })
-    ]);
+    await siteSettingsReady;
   } catch (err) {
     console.error("SITE SETTINGS STARTUP ERROR:", err);
   }
@@ -256,7 +288,6 @@ function applySiteSettings() {
 
   const diamondGrid = document.getElementById("diamond-grid");
   const customDiamondBox = document.querySelector(".custom-diamond-box");
-  const customDiamondsSupported = GAMES[selectedGameId]?.supportsCustomDiamonds === true;
   const topupLoginBox = document.getElementById("login-required-box");
 
   if (!isTopupAvailable()) {
@@ -283,7 +314,7 @@ function applySiteSettings() {
     hideStatusMessage("topup-settings-status");
 
     if (customDiamondBox) {
-      customDiamondBox.classList.toggle("hidden", !customDiamondsSupported);
+      customDiamondBox.classList.remove("hidden");
     }
   }
 
@@ -376,6 +407,7 @@ function createListingImage(listing, className) {
 }
 
 function createOrderCard(order, options = {}) {
+  const game = getGame(getOrderGameId(order));
   const card = document.createElement("div");
   const title = document.createElement("h3");
   const price = Number(order.price || 0);
@@ -390,9 +422,27 @@ function createOrderCard(order, options = {}) {
     appendOrderField(card, "UID", order.gameUID || "N/A");
   }
 
+  appendOrderField(card, "Game", game.name);
+  appendOrderField(card, "Type", order.orderType === "account-purchase" ? "ACCOUNT PURCHASE" : "TOP-UP ORDER");
   appendOrderField(card, "Item", order.item || "N/A");
   appendOrderField(card, "Price", `₦${price.toLocaleString()}`);
-  appendOrderField(card, "Status", order.status || "pending");
+  const statusRow = document.createElement("p");
+  const statusLabel = document.createElement("strong");
+  const statusBadge = document.createElement("span");
+  const status = order.status || "processing";
+  statusLabel.textContent = "Status: ";
+  statusBadge.className = `status-badge status-${status}`;
+  statusBadge.textContent = status.toUpperCase();
+  statusRow.append(statusLabel, statusBadge);
+  card.appendChild(statusRow);
+
+  if (order.listingId) {
+    appendOrderField(card, "Listing ID", order.listingId);
+  }
+
+  if (order.createdAt) {
+    appendOrderField(card, "Date", formatDate(order.createdAt));
+  }
 
   if (options.showStatusControl) {
     const statusSelect = document.createElement("select");
@@ -410,7 +460,7 @@ function createOrderCard(order, options = {}) {
     });
 
     statusSelect.addEventListener("change", () => {
-      updateOrderStatus(order.id, statusSelect.value);
+      window.updateOrderStatus(order.id, statusSelect.value);
     });
 
     card.appendChild(statusSelect);
@@ -427,148 +477,224 @@ function createOrderCard(order, options = {}) {
   return card;
 }
 
-// Create one public marketplace card implementation for Home and Marketplace.
-function createMarketplaceCard(listing, isFeatured = false) {
-  const card = document.createElement("article");
-  card.className = isFeatured ? "market-card featured" : "market-card";
-  card.dataset.listingId = listing.id;
-
-  const badge = document.createElement("div");
-  badge.className = isFeatured ? "badge premium" : "badge";
-  badge.textContent = isFeatured ? "⭐ FEATURED" : "VERIFIED";
-  card.appendChild(badge);
-  card.appendChild(createListingImage(listing, "listing-image"));
-
-  const title = document.createElement("h3");
-  title.textContent = listing.title || "Gaming account";
-  card.appendChild(title);
-  const description = document.createElement("p");
-  description.textContent = `Region: ${listing.region || "N/A"} • Level ${listing.level || "N/A"} • Rank: ${listing.rank || "N/A"}`;
-  card.appendChild(description);
-  const details = document.createElement("p");
-  details.textContent = listing.description || "";
-  card.appendChild(details);
-  const price = document.createElement("h2");
-  price.textContent = `₦${Number(listing.price || 0).toLocaleString()}`;
-  card.appendChild(price);
-
-  const button = document.createElement("button");
-  button.type = "button";
-  button.textContent = isMarketplaceAvailable() ? "BUY ACCOUNT" : "MARKETPLACE UNAVAILABLE";
-  button.disabled = !isMarketplaceAvailable();
-  button.addEventListener("click", () => window.openAccountPurchase(listing.id));
-  card.appendChild(button);
-  return card;
+function formatNaira(value) {
+  return `₦${Number(value || 0).toLocaleString()}`;
 }
 
-window.openAccountPurchase = async (listingId) => {
-  await ensureSiteSettingsLoaded();
-  const listing = allListings.find((entry) => entry.id === listingId);
-  if (!listing) {
-    window.location.href = `marketplace.html?listing=${encodeURIComponent(listingId)}`;
-    return;
+function formatDate(timestamp) {
+  if (!timestamp) return "N/A";
+
+  const dateValue = typeof timestamp.toDate === "function"
+    ? timestamp.toDate()
+    : new Date(timestamp);
+
+  return Number.isNaN(dateValue.getTime())
+    ? "N/A"
+    : dateValue.toLocaleDateString();
+}
+
+function getListingImages(listing) {
+  return [listing.image1, listing.image2, listing.image3]
+    .map(getValidImageUrl)
+    .filter(Boolean);
+}
+
+function getListingById(listingId) {
+  return allListings.find((listing) => listing.id === listingId) || null;
+}
+
+function createListingImageGallery(listing, className = "listing-gallery") {
+  const gallery = document.createElement("div");
+  const images = getListingImages(listing);
+
+  gallery.className = className;
+
+  if (!images.length) {
+    gallery.appendChild(createListingImage(listing, "listing-image"));
+    return gallery;
   }
-  if (!auth.currentUser) {
-    showToast("Please log in to purchase an account.");
-    await window.signInWithGoogle();
-    if (!auth.currentUser) return;
-  }
-  if (!isMarketplaceAvailable()) {
-    showToast("Marketplace is currently unavailable.");
-    return;
-  }
-  window.chatAdminForAccount(listing.title, listing.price, listing.id);
-};
 
-// Filter and render marketplace listings
-function renderMarketplaceListings() {
-  const searchTerm = document.getElementById("marketplace-search")?.value.toLowerCase() || "";
-  const regionFilter = document.getElementById("region-filter")?.value || "";
-  const priceFilter = document.getElementById("price-filter")?.value || "";
-  const levelFilter = document.getElementById("level-filter")?.value || "";
+  images.forEach((imageUrl, index) => {
+    const image = document.createElement("img");
 
-  // Filter listings based on search and filters
-  const filtered = allListings.filter((listing) => {
-    const matchesSearch =
-      !searchTerm ||
-      (listing.title || "").toLowerCase().includes(searchTerm) ||
-      (listing.sellerName || "").toLowerCase().includes(searchTerm) ||
-      (listing.region || "").toLowerCase().includes(searchTerm) ||
-      (listing.description || "").toLowerCase().includes(searchTerm);
-
-    const matchesRegion = !regionFilter || listing.region === regionFilter;
-
-    const matchesLevel = !levelFilter || isLevelInRange(Number(listing.level), levelFilter);
-
-    const matchesPrice = !priceFilter || isPriceInRange(Number(listing.price), priceFilter);
-
-    return matchesSearch && matchesRegion && matchesLevel && matchesPrice;
+    image.src = imageUrl;
+    image.alt = `${listing.title || "Gaming account"} screenshot ${index + 1}`;
+    image.className = "listing-image";
+    gallery.appendChild(image);
   });
 
-  // Separate featured (expensive) from regular listings
-  const featured = filtered.filter(l => Number(l.price) >= 100000).slice(0, 3);
-  const regular = filtered;
-
-  // Render featured section
-  const featuredGrid = document.getElementById("featured-grid");
-  if (featuredGrid) {
-    featuredGrid.replaceChildren();
-
-    if (featured.length > 0) {
-      featured.forEach((listing) => {
-        featuredGrid.appendChild(createMarketplaceCard(listing, true));
-      });
-    } else {
-      const emptyMsg = document.createElement("p");
-      emptyMsg.textContent = "No featured listings match your search.";
-      featuredGrid.appendChild(emptyMsg);
-    }
-  }
-
-  // Render all listings on the Marketplace page and approved featured cards on Home.
-  const homeFeaturedGrid = document.getElementById("home-featured-grid");
-  if (homeFeaturedGrid) {
-    homeFeaturedGrid.replaceChildren();
-    const homeListings = filtered.slice(0, 3);
-    if (homeListings.length) {
-      homeListings.forEach((listing) => homeFeaturedGrid.appendChild(createMarketplaceCard(listing, true)));
-    } else {
-      const empty = document.createElement("p");
-      empty.className = "empty-state";
-      empty.textContent = "No approved accounts are available right now. Please check back soon.";
-      homeFeaturedGrid.appendChild(empty);
-    }
-  }
-
-  const marketplaceGrid = document.getElementById("marketplace-grid");
-  if (marketplaceGrid) {
-    marketplaceGrid.replaceChildren();
-
-    if (!filtered.length) {
-      const emptyMsg = document.createElement("p");
-      emptyMsg.textContent = "No listings match your search criteria.";
-      marketplaceGrid.appendChild(emptyMsg);
-      return;
-    }
-
-    filtered.forEach((listing) => {
-      marketplaceGrid.appendChild(createMarketplaceCard(listing, false));
-    });
-  }
+  return gallery;
 }
 
-// Helper function to check if level is in range
-function isLevelInRange(level, range) {
-  const [min, max] = range.split("-").map(Number);
-  return level >= min && (max ? level <= max : true);
+function isListingApproved(listing) {
+  return listing.status === "approved";
 }
 
-// Helper function to check if price is in range
 function isPriceInRange(price, range) {
+  if (!range) return true;
   if (range === "500000") return price >= 500000;
 
   const [min, max] = range.split("-").map(Number);
   return price >= min && price <= max;
+}
+
+function sortListings(listings, sortValue) {
+  const sortedListings = [...listings];
+
+  if (sortValue === "price-asc") {
+    sortedListings.sort((first, second) => Number(first.price || 0) - Number(second.price || 0));
+  } else if (sortValue === "price-desc") {
+    sortedListings.sort((first, second) => Number(second.price || 0) - Number(first.price || 0));
+  } else {
+    sortedListings.sort((first, second) => {
+      const firstCreatedAt = first.approvedAt?.toMillis?.() || first.createdAt?.toMillis?.() || 0;
+      const secondCreatedAt = second.approvedAt?.toMillis?.() || second.createdAt?.toMillis?.() || 0;
+
+      return secondCreatedAt - firstCreatedAt;
+    });
+  }
+
+  return sortedListings;
+}
+
+function createMarketplaceCard(listing, isFeatured = false) {
+  const card = document.createElement("div");
+  const badge = document.createElement("div");
+  const title = document.createElement("h3");
+  const details = document.createElement("p");
+  const description = document.createElement("p");
+  const price = document.createElement("h2");
+  const viewButton = document.createElement("button");
+  const buyButton = document.createElement("button");
+  const actions = document.createElement("div");
+
+  card.className = isFeatured ? "market-card featured" : "market-card";
+  badge.className = isFeatured ? "badge premium" : "badge";
+  badge.textContent = `${isFeatured ? "⭐ FEATURED · " : ""}${getGame(getListingGameId(listing)).shortName} · ${listing.rank || "ACCOUNT"}`;
+  title.textContent = listing.title || "Gaming Account";
+  details.textContent = `${getGame(getListingGameId(listing)).name} · ${listing.region || "N/A"} · ${listing.rank || "N/A"} · Level ${listing.level || "N/A"}`;
+  description.textContent = listing.description || "No description provided.";
+  price.textContent = formatNaira(listing.price);
+  viewButton.type = "button";
+  viewButton.textContent = "VIEW ACCOUNT";
+  viewButton.addEventListener("click", () => window.viewAccountListing(listing.id));
+  buyButton.type = "button";
+  buyButton.className = "card-buy-button";
+  buyButton.textContent = "BUY";
+  buyButton.addEventListener("click", () => window.openAccountPurchase(listing.id));
+  actions.className = "account-card-actions";
+  actions.append(viewButton, buyButton);
+
+  card.append(
+    badge,
+    createListingImage(listing, "listing-image"),
+    title,
+    details,
+    description,
+    price,
+    actions
+  );
+
+  return card;
+}
+
+function renderMarketplaceListings() {
+  const searchInput = document.getElementById("marketplace-search");
+  if (searchInput && !searchInput.value && new URLSearchParams(location.search).get("search")) searchInput.value = new URLSearchParams(location.search).get("search");
+  const searchTerm = searchInput?.value.toLowerCase().trim() || "";
+  const regionFilter = document.getElementById("region-filter")?.value || "";
+  const gameFilter = document.getElementById("game-filter")?.value || "";
+  const rankFilter = document.getElementById("rank-filter")?.value.toLowerCase() || "";
+  const priceFilter = document.getElementById("price-filter")?.value || "";
+  const sortFilter = document.getElementById("sort-filter")?.value || "newest";
+
+  const filteredListings = allListings.filter((listing) => {
+    if (!isListingApproved(listing)) return false;
+
+    const listingRank = String(listing.rank || "").toLowerCase();
+    const matchesSearch =
+      !searchTerm ||
+      String(listing.title || "").toLowerCase().includes(searchTerm) ||
+      listingRank.includes(searchTerm) ||
+      String(listing.region || "").toLowerCase().includes(searchTerm);
+
+    const matchesGame = !gameFilter || getListingGameId(listing) === gameFilter;
+    const matchesRegion = !regionFilter || listing.region === regionFilter;
+    const matchesRank = !rankFilter || listingRank.includes(rankFilter);
+    const matchesPrice = isPriceInRange(Number(listing.price || 0), priceFilter);
+
+    return matchesSearch && matchesGame && matchesRegion && matchesRank && matchesPrice;
+  });
+
+  const sortedListings = sortListings(filteredListings, sortFilter);
+  const featuredListings = sortedListings.slice(0, 3);
+  const featuredGrid = document.getElementById("featured-grid");
+  const marketplaceGrid = document.getElementById("marketplace-grid");
+
+  if (featuredGrid) {
+    featuredGrid.replaceChildren();
+
+    if (featuredListings.length) {
+      featuredListings.forEach((listing) => {
+        featuredGrid.appendChild(createMarketplaceCard(listing, true));
+      });
+    } else {
+      const emptyMessage = document.createElement("p");
+
+      emptyMessage.textContent = "No featured listings match your filters.";
+      featuredGrid.appendChild(emptyMessage);
+    }
+  }
+
+  if (!marketplaceGrid) return;
+
+  marketplaceGrid.replaceChildren();
+
+  if (!sortedListings.length) {
+    const emptyMessage = document.createElement("p");
+
+    emptyMessage.textContent = "No approved listings match your filters.";
+    marketplaceGrid.appendChild(emptyMessage);
+    return;
+  }
+
+  sortedListings.forEach((listing) => {
+    marketplaceGrid.appendChild(createMarketplaceCard(listing));
+  });
+}
+
+let currentUserIsAdmin = false;
+
+async function checkAdminAccess(user) {
+  if (!user) {
+    return false;
+  }
+
+  try {
+    const adminSnap = await getDoc(doc(db, "admins", user.uid));
+
+    if (adminSnap.exists()) {
+      return true;
+    }
+  } catch (err) {
+    console.warn("ADMIN CHECK ERROR:", err);
+  }
+
+  return adminConfig.emails.includes((user.email || "").toLowerCase());
+}
+
+function getSupportWhatsappNumber() {
+  return String(
+    siteSettings.supportWhatsapp || defaultSiteSettings.supportWhatsapp
+  ).replace(/\D/g, "");
+}
+
+function getListingImage(listing) {
+  return listing.image1 || listing.imageUrl || listing.screenshotUrl || DEFAULT_LISTING_IMAGE;
+}
+
+function setElementText(element, value) {
+  setText(element, value);
 }
 
 function setSelectedGame(gameId) {
@@ -730,14 +856,13 @@ function setLoginOverlay(visible, message = "Connecting to Google…") {
 
 window.signInWithGoogle = async () => {
   try {
-    setLoginOverlay(true);
-    showToast("Opening Google login...");
+    window.showToast("Opening Google login...");
     await authPersistenceReady;
 
     const result = await signInWithPopup(auth, provider);
     const user = result.user;
 
-    showToast(`Welcome ${user.displayName} ⚡`);
+    window.showToast(`Welcome ${user.displayName} ⚡`);
 
     saveUser(user).catch((err) => {
       console.error("LOGIN SUCCESSFUL BUT PROFILE SAVE FAILED:", err);
@@ -761,7 +886,7 @@ window.signInWithGoogle = async () => {
 window.logout = async () => {
   try {
     await signOut(auth);
-    showToast("Logged out successfully ⚡");
+    window.showToast("Logged out successfully ⚡");
   } catch (err) {
     console.error("LOGOUT ERROR:", err);
 
@@ -774,10 +899,10 @@ window.logout = async () => {
   }
 };
 
+
 async function sendCustomerConfirmationEmail(orderData) {
   try {
     await sendEmail(
-      "customer order confirmation",
       {
         to_email: orderData.customerEmail,
         user_email: orderData.customerEmail,
@@ -807,7 +932,6 @@ async function sendCustomerConfirmationEmail(orderData) {
 async function sendAdminOrderEmail(orderData) {
   try {
     await sendEmail(
-      "admin new-order notification",
       {
         to_email: adminConfig.emails[0],
         user_email: adminConfig.emails[0],
@@ -836,12 +960,7 @@ async function sendAdminOrderEmail(orderData) {
 
 async function sendDeliveredReceiptEmail(orderData) {
   try {
-    if (!orderData.customerEmail) {
-      throw new Error("Order is missing customerEmail");
-    }
-
     await sendEmail(
-      "customer delivered receipt",
       {
         to_email: orderData.customerEmail,
         user_email: orderData.customerEmail,
@@ -869,121 +988,409 @@ async function sendDeliveredReceiptEmail(orderData) {
 }
 
 // Load approved marketplace listings with real-time updates AND search/filter support
-function loadMarketplaceListings() {
-  const marketplaceGrid = document.getElementById("marketplace-grid");
-  const homeFeaturedGrid = document.getElementById("home-featured-grid");
-  const marketplaceControls = document.getElementById("marketplace-controls");
+function populateAdminSettingsForm() {
+  const diamondRateInput = document.getElementById("setting-diamond-rate");
+  const supportWhatsappInput = document.getElementById("setting-support-whatsapp");
+  const topupEnabledInput = document.getElementById("setting-topup-enabled");
+  const marketplaceEnabledInput = document.getElementById("setting-marketplace-enabled");
+  const maintenanceModeInput = document.getElementById("setting-maintenance-mode");
 
-  if (!marketplaceGrid && !homeFeaturedGrid) return;
-  if (marketplaceUnsubscribe) return;
+  if (diamondRateInput) diamondRateInput.value = siteSettings.diamondRate;
+  if (supportWhatsappInput) supportWhatsappInput.value = siteSettings.supportWhatsapp;
+  if (topupEnabledInput) topupEnabledInput.checked = siteSettings.topupEnabled;
+  if (marketplaceEnabledInput) marketplaceEnabledInput.checked = siteSettings.marketplaceEnabled;
+  if (maintenanceModeInput) maintenanceModeInput.checked = siteSettings.maintenanceMode;
+}
 
-  if (!isMarketplaceAvailable()) {
-    applySiteSettings();
+window.saveAdminSiteSettings = async () => {
+  const user = auth.currentUser;
+
+  if (!user || !(await checkAdminAccess(user))) {
+    alert("Admin access required.");
     return;
   }
 
+  const diamondRateInput = document.getElementById("setting-diamond-rate");
+  const supportWhatsappInput = document.getElementById("setting-support-whatsapp");
+  const topupEnabledInput = document.getElementById("setting-topup-enabled");
+  const marketplaceEnabledInput = document.getElementById("setting-marketplace-enabled");
+  const maintenanceModeInput = document.getElementById("setting-maintenance-mode");
+
+  const nextSettings = {
+    diamondRate: normalizePositiveNumber(diamondRateInput?.value, defaultSiteSettings.diamondRate),
+    supportWhatsapp: normalizeString(supportWhatsappInput?.value, defaultSiteSettings.supportWhatsapp),
+    topupEnabled: Boolean(topupEnabledInput?.checked),
+    marketplaceEnabled: Boolean(marketplaceEnabledInput?.checked),
+    maintenanceMode: Boolean(maintenanceModeInput?.checked),
+    updatedAt: serverTimestamp(),
+    updatedBy: user.uid
+  };
+
   try {
-    const listingsQuery = query(
-      collection(db, "listings"),
-      where("status", "==", "approved")
-    );
+    await setDoc(doc(db, "settings", "config"), nextSettings, { merge: true });
+    siteSettings = { ...siteSettings, ...nextSettings };
+    populateAdminSettingsForm();
+    applySiteSettings();
+    window.showToast("Site settings saved ✅");
+  } catch (err) {
+    console.error("SAVE SITE SETTINGS ERROR:", err);
+    alert("Could not save site settings: " + err.message);
+  }
+};
 
-    marketplaceUnsubscribe = onSnapshot(listingsQuery, (snapshot) => {
-      console.log("MARKETPLACE LISTINGS UPDATED:", snapshot.size);
+async function loadMarketplaceListings() {
+  const marketplaceGrid = document.getElementById("marketplace-grid");
+  const featuredGrid = document.getElementById("featured-grid");
 
-      allListings = [];
+  if (!marketplaceGrid && !featuredGrid) return;
 
-      snapshot.forEach((docSnap) => {
-        allListings.push({
-          id: docSnap.id,
-          ...docSnap.data()
-        });
-      });
+  try {
+    const listingsQuery = query(collection(db, "listings"), where("status", "==", "approved"));
+    const snapshot = await getDocs(listingsQuery);
 
-      allListings.sort((firstListing, secondListing) => {
-        const firstApprovedAt = firstListing.approvedAt?.toMillis?.() || 0;
-        const secondApprovedAt = secondListing.approvedAt?.toMillis?.() || 0;
-
-        return secondApprovedAt - firstApprovedAt;
-      });
-
-      // Show controls and sections
-      if (marketplaceControls) {
-        marketplaceControls.classList.remove("hidden");
-      }
-      const featuredSection = document.getElementById("featured-section");
-      if (featuredSection) {
-        featuredSection.classList.remove("hidden");
-      }
-      if (marketplaceGrid) {
-        marketplaceGrid.classList.remove("hidden");
-      }
-
-      // Initial render
-      renderMarketplaceListings();
-
-    }, (error) => {
-      console.error("MARKETPLACE LISTENER ERROR:", error);
-      const target = marketplaceGrid || homeFeaturedGrid;
-      if (!target) return;
-      target.replaceChildren();
-      const errorMsg = document.createElement("p");
-      errorMsg.textContent = "Error loading marketplace listings.";
-      target.appendChild(errorMsg);
+    allListings = [];
+    snapshot.forEach((docSnap) => {
+      allListings.push({ id: docSnap.id, ...docSnap.data() });
     });
 
-    // Set up search and filter event listeners once per page.
-    if (marketplaceFiltersBound) return marketplaceUnsubscribe;
-    marketplaceFiltersBound = true;
-    const searchInput = document.getElementById("marketplace-search");
-    if (searchInput) {
-      searchInput.addEventListener("input", renderMarketplaceListings);
+    renderMarketplaceListings();
+    const homeGrid = document.getElementById("home-featured-grid");
+    if (homeGrid) {
+      homeGrid.replaceChildren();
+      const featured = sortListings(allListings.filter(isListingApproved), "newest").slice(0, 3);
+      if (!featured.length) {
+        const empty = document.createElement("p");
+        empty.textContent = "No approved accounts are available yet. Check back soon.";
+        homeGrid.appendChild(empty);
+      } else featured.forEach((listing) => homeGrid.appendChild(createMarketplaceCard(listing, true)));
     }
-
-    const regionFilter = document.getElementById("region-filter");
-    if (regionFilter) {
-      regionFilter.addEventListener("change", renderMarketplaceListings);
-    }
-
-    const priceFilter = document.getElementById("price-filter");
-    if (priceFilter) {
-      priceFilter.addEventListener("change", renderMarketplaceListings);
-    }
-
-    const levelFilter = document.getElementById("level-filter");
-    if (levelFilter) {
-      levelFilter.addEventListener("change", renderMarketplaceListings);
-    }
-
-    const clearFiltersBtn = document.getElementById("clear-filters");
-    if (clearFiltersBtn) {
-      clearFiltersBtn.addEventListener("click", () => {
-        if (searchInput) searchInput.value = "";
-        if (regionFilter) regionFilter.value = "";
-        if (priceFilter) priceFilter.value = "";
-        if (levelFilter) levelFilter.value = "";
-        renderMarketplaceListings();
-        showToast("Filters cleared ✅");
-      });
-    }
-
-    return marketplaceUnsubscribe;
-
   } catch (err) {
-    console.error("LOAD MARKETPLACE ERROR:", err);
-    marketplaceGrid.replaceChildren();
-    const errorMsg = document.createElement("p");
-    errorMsg.textContent = "Could not load marketplace listings.";
-    marketplaceGrid.appendChild(errorMsg);
+    console.error("LOAD MARKETPLACE LISTINGS ERROR:", err);
+    if (marketplaceGrid) {
+      marketplaceGrid.replaceChildren();
+      const errorMessage = document.createElement("p");
+      errorMessage.textContent = "Could not load marketplace listings.";
+      marketplaceGrid.appendChild(errorMessage);
+    }
   }
 }
 
-// Load admin listings - NOW GLOBAL (moved out of loadAdminOrders)
-async function loadAdminListings() {
-  console.log("LOAD ADMIN LISTINGS STARTED");
-  const listingsList = document.getElementById("listings-list");
+function initializeMarketplaceControls() {
+  const controls = document.getElementById("marketplace-controls");
+  const featuredSection = document.getElementById("featured-section");
 
-  if (!listingsList) return;
+  if (controls && isMarketplaceAvailable()) {
+    controls.classList.remove("hidden");
+  }
+
+  if (featuredSection && isMarketplaceAvailable()) {
+    featuredSection.classList.remove("hidden");
+  }
+
+  if (controls?.dataset.listenersBound === "true") return;
+
+  ["marketplace-search", "game-filter", "region-filter", "price-filter", "rank-filter", "sort-filter"].forEach((id) => {
+    const element = document.getElementById(id);
+    if (element) {
+      element.addEventListener(id === "marketplace-search" ? "input" : "change", renderMarketplaceListings);
+    }
+  });
+
+  document.getElementById("clear-filters")?.addEventListener("click", () => {
+    ["marketplace-search", "game-filter", "region-filter", "price-filter", "rank-filter", "sort-filter"].forEach((id) => {
+      const element = document.getElementById(id);
+      if (element) element.value = id === "sort-filter" ? "newest" : "";
+    });
+    renderMarketplaceListings();
+  });
+
+  if (controls) controls.dataset.listenersBound = "true";
+}
+
+window.viewAccountListing = (listingId) => {
+  const listing = getListingById(listingId);
+  const modal = document.getElementById("account-detail-modal");
+  const content = document.getElementById("account-detail-content");
+
+  if (!listing || !modal || !content) return;
+
+  selectedAccountListing = listing;
+  content.replaceChildren();
+
+  const title = document.createElement("h2");
+  const details = document.createElement("div");
+  const description = document.createElement("p");
+  const price = document.createElement("h2");
+  const buyButton = document.createElement("button");
+
+  title.textContent = listing.title || "Gaming Account";
+  details.className = "account-detail-grid";
+  [["Game", getGame(getListingGameId(listing)).name], ["Region", listing.region], ["Rank", listing.rank], ["Level", listing.level], ["Availability", listing.status === "approved" ? "Available" : listing.status]].forEach(([label, value]) => {
+    const item = document.createElement("p");
+    const strong = document.createElement("strong");
+    strong.textContent = `${label}:`;
+    item.append(strong, ` ${value || "N/A"}`);
+    details.appendChild(item);
+  });
+
+  description.textContent = listing.description || "No description provided.";
+  price.textContent = formatNaira(listing.price);
+  buyButton.type = "button";
+  buyButton.className = "primary-btn full-btn";
+  buyButton.textContent = "BUY ACCOUNT";
+  buyButton.addEventListener("click", () => window.openAccountPurchase(listing.id));
+
+  content.append(title, createListingImageGallery(listing), details, description, price, buyButton);
+  modal.classList.remove("hidden");
+};
+
+window.closeAccountDetails = () => {
+  const modal = document.getElementById("account-detail-modal");
+
+  if (modal) {
+    modal.classList.add("hidden");
+  }
+};
+
+window.openAccountPurchase = async (listingId) => {
+  await ensureSiteSettingsLoaded();
+
+  const user = auth.currentUser;
+
+  if (!user) {
+    alert("Please login first ⚡");
+    return;
+  }
+
+  const listing = getListingById(listingId) || selectedAccountListing;
+
+  if (!listing || listing.id !== listingId || !isListingApproved(listing)) {
+    alert("This account is no longer available.");
+    return;
+  }
+
+  selectedAccountListing = listing;
+
+  const modal = document.getElementById("account-purchase-modal");
+  const summary = document.getElementById("account-purchase-summary");
+
+  if (!modal || !summary) return;
+
+  summary.replaceChildren();
+
+  [
+    ["Account", listing.title || "Gaming Account"],
+    ["Price", formatNaira(listing.price)],
+    ["Customer", user.displayName || "Customer"],
+    ["Email", user.email || "N/A"]
+  ].forEach(([label, value]) => {
+    const row = document.createElement("p");
+
+    row.innerHTML = `<strong>${label}:</strong> ${value}`;
+    summary.appendChild(row);
+  });
+
+  window.closeAccountDetails();
+  modal.classList.remove("hidden");
+};
+
+window.closeAccountPurchase = () => {
+  const modal = document.getElementById("account-purchase-modal");
+
+  if (modal) {
+    modal.classList.add("hidden");
+  }
+};
+
+async function sendMarketplacePurchaseEmails(orderData) {
+  try {
+    await sendEmail({
+      to_email: adminConfig.emails[0],
+      user_email: adminConfig.emails[0],
+      email: adminConfig.emails[0],
+      reply_to: orderData.customerEmail,
+      to_name: "Savage Store Admin",
+      customer_name: orderData.customerName,
+      order_item: `NEW ACCOUNT PURCHASE: ${orderData.item}`,
+      item: orderData.item,
+      uid: orderData.listingId,
+      currency_symbol: "₦",
+      price: Number(orderData.price).toLocaleString()
+    });
+  } catch (err) {
+    console.error("ACCOUNT PURCHASE ADMIN EMAIL ERROR:", err);
+    window.showToast("Purchase saved, but admin email could not be sent ⚠️");
+  }
+
+  try {
+    await sendEmail({
+      to_email: orderData.customerEmail,
+      user_email: orderData.customerEmail,
+      email: orderData.customerEmail,
+      reply_to: adminConfig.emails[0],
+      to_name: orderData.customerName,
+      customer_name: orderData.customerName,
+      order_item: `ACCOUNT PURCHASE: ${orderData.item}`,
+      item: orderData.item,
+      uid: orderData.listingId,
+      currency_symbol: "₦",
+      price: Number(orderData.price).toLocaleString()
+    });
+  } catch (err) {
+    console.error("ACCOUNT PURCHASE CUSTOMER EMAIL ERROR:", err);
+    window.showToast("Purchase saved, but confirmation email could not be sent ⚠️");
+  }
+}
+
+window.confirmAccountPurchase = async () => {
+  await ensureSiteSettingsLoaded();
+
+  const user = auth.currentUser;
+  const listing = selectedAccountListing;
+
+  if (!user) {
+    alert("Please login first ⚡");
+    return;
+  }
+
+  if (!listing?.id) {
+    alert("No account selected.");
+    return;
+  }
+
+  const orderId = window.generateOrderId();
+  let createdOrderData = null;
+
+  try {
+    window.showToast("Creating account purchase...");
+
+    await runTransaction(db, async (transaction) => {
+      const listingRef = doc(db, "listings", listing.id);
+      const listingSnap = await transaction.get(listingRef);
+
+      if (!listingSnap.exists()) {
+        throw new Error("This listing no longer exists.");
+      }
+
+      const latestListing = listingSnap.data();
+
+      if (latestListing.status !== "approved") {
+        throw new Error("This account is no longer available for purchase.");
+      }
+
+      const orderRef = doc(db, "orders", orderId);
+
+      createdOrderData = {
+        orderId,
+        orderType: "account-purchase",
+        userId: user.uid,
+        customerName: user.displayName || "Customer",
+        customerEmail: user.email,
+        googleEmail: user.email,
+        listingId: listing.id,
+        gameId: getListingGameId(latestListing),
+        item: latestListing.title || "Gaming Account",
+        price: Number(latestListing.price || 0),
+        status: "processing",
+        paymentProof: "Account purchase pending admin processing",
+        createdAt: serverTimestamp()
+      };
+
+      transaction.set(orderRef, createdOrderData);
+      transaction.update(listingRef, {
+        status: "sold",
+        soldAt: serverTimestamp(),
+        soldTo: user.uid,
+        soldOrderId: orderId,
+        updatedAt: serverTimestamp()
+      });
+    });
+
+    window.closeAccountPurchase();
+    window.showToast(`Purchase created ✅ Order ID: ${orderId}`);
+
+    if (createdOrderData) {
+      sendMarketplacePurchaseEmails(createdOrderData);
+    }
+
+    await loadMarketplaceListings();
+    loadUserOrders(user.uid);
+  } catch (err) {
+    console.error("ACCOUNT PURCHASE ERROR:", err);
+    alert("Could not create purchase:\n\n" + err.message);
+  }
+};
+
+
+function appendListingField(card, label, value) {
+  appendOrderField(card, label, value || "N/A");
+}
+
+function createAdminListingCard(listing) {
+  const card = document.createElement("div");
+  const title = document.createElement("h3");
+  const image = document.createElement("img");
+  const actions = document.createElement("div");
+  const approveButton = document.createElement("button");
+  const rejectButton = document.createElement("button");
+  const removeButton = document.createElement("button");
+
+  card.className = "order-card";
+  title.textContent = listing.title || "No Listing Title";
+  card.appendChild(title);
+
+  image.src = getListingImage(listing);
+  image.alt = listing.title || "Listing screenshot";
+  image.style.maxWidth = "180px";
+  image.style.borderRadius = "12px";
+  card.appendChild(image);
+
+  appendListingField(card, "Seller", listing.sellerName);
+  appendListingField(card, "Email", listing.sellerEmail);
+  appendListingField(card, "Contact", listing.contact);
+  appendListingField(card, "Region", listing.region);
+  appendListingField(card, "Level", listing.level);
+  appendListingField(card, "Rank", listing.rank);
+  appendListingField(card, "Price", `₦${Number(listing.price || 0).toLocaleString()}`);
+  appendListingField(card, "Status", listing.status);
+  appendListingField(card, "Date", formatDate(listing.createdAt));
+  appendListingField(card, "Description", listing.description);
+
+  if (listing.image1 || listing.image2 || listing.image3) {
+    appendListingField(
+      card,
+      "Screenshots",
+      [listing.image1, listing.image2, listing.image3].filter(Boolean).join(" | ")
+    );
+  }
+
+  actions.className = "admin-controls";
+  approveButton.type = "button";
+  approveButton.textContent = "APPROVE";
+  approveButton.disabled = listing.status !== "pending-review" && listing.status !== "rejected";
+  approveButton.addEventListener("click", () => window.approveListing(listing.id));
+
+  rejectButton.type = "button";
+  rejectButton.textContent = "REJECT";
+  rejectButton.disabled = listing.status === "sold" || listing.status === "removed";
+  rejectButton.addEventListener("click", () => window.rejectListing(listing.id));
+
+  removeButton.type = "button";
+  removeButton.textContent = "REMOVE";
+  removeButton.className = "danger-btn";
+  removeButton.disabled = listing.status === "sold";
+  removeButton.addEventListener("click", () => window.removeListing(listing.id));
+
+  actions.append(approveButton, rejectButton, removeButton);
+  card.appendChild(actions);
+
+  return card;
+}
+
+async function loadAdminListings() {
+  const listingsList = document.getElementById("admin-listings-list") || document.getElementById("listings-list");
+
+  if (!listingsList || !currentUserIsAdmin) return;
 
   try {
     const listingsQuery = query(
@@ -992,9 +1399,7 @@ async function loadAdminListings() {
     );
 
     const snapshot = await getDocs(listingsQuery);
-    console.log("LISTINGS COUNT:", snapshot.size);
-
-    let listings = [];
+    const listings = [];
 
     snapshot.forEach((docSnap) => {
       listings.push({
@@ -1003,201 +1408,109 @@ async function loadAdminListings() {
       });
     });
 
+    listingsList.replaceChildren();
+
     if (!listings.length) {
-      listingsList.replaceChildren();
-      const emptyMsg = document.createElement("p");
-      emptyMsg.textContent = "No listings found.";
-      listingsList.appendChild(emptyMsg);
+      const emptyMessage = document.createElement("p");
+
+      emptyMessage.textContent = "No listings submitted yet.";
+      listingsList.appendChild(emptyMessage);
       return;
     }
 
-    listingsList.replaceChildren();
-
     listings.forEach((listing) => {
-      const card = document.createElement("div");
-      card.className = "order-card";
-
-      const title = document.createElement("h3");
-      title.textContent = listing.title;
-      card.appendChild(title);
-
-      if (getValidImageUrl(listing.image1)) {
-        card.appendChild(createListingImage(listing, "admin-listing-image"));
-      }
-
-      const fields = [
-        { label: "Seller", value: listing.sellerName },
-        { label: "Email", value: listing.sellerEmail },
-        { label: "Region", value: listing.region },
-        { label: "Rank", value: listing.rank },
-        { label: "Level", value: listing.level },
-        { label: "Price", value: `₦${Number(listing.price).toLocaleString()}` },
-        { label: "Status", value: listing.status }
-      ];
-
-      fields.forEach(({ label, value }) => {
-        appendOrderField(card, label, value);
-      });
-
-      const description = document.createElement("p");
-      description.textContent = listing.description;
-      card.appendChild(description);
-
-      const approveBtn = document.createElement("button");
-      approveBtn.className = "primary-btn";
-      approveBtn.textContent = "APPROVE";
-      approveBtn.addEventListener("click", () => approveListing(listing.id));
-      card.appendChild(approveBtn);
-
-      const rejectBtn = document.createElement("button");
-      rejectBtn.className = "danger-btn";
-      rejectBtn.textContent = "REJECT";
-      rejectBtn.addEventListener("click", () => rejectListing(listing.id));
-      card.appendChild(rejectBtn);
-
-      listingsList.appendChild(card);
+      listingsList.appendChild(createAdminListingCard(listing));
     });
-
   } catch (err) {
-    console.error("LOAD LISTINGS ERROR:", err);
+    console.error("LOAD ADMIN LISTINGS ERROR:", err);
     listingsList.replaceChildren();
-    const errorMsg = document.createElement("p");
-    errorMsg.textContent = "Error loading listings.";
-    listingsList.appendChild(errorMsg);
+
+    const errorMessage = document.createElement("p");
+
+    errorMessage.textContent = "Could not load listings.";
+    listingsList.appendChild(errorMessage);
   }
 }
 
 window.approveListing = async (listingId) => {
-  try {
-    await updateDoc(
-      doc(db, "listings", listingId),
-      {
-        status: "approved",
-        approvedAt: serverTimestamp()
-      }
-    );
-
-    showToast("Listing approved ✅ - Marketplace will update in real-time!");
-    loadAdminListings();
-
-  } catch (err) {
-    console.error("APPROVE LISTING ERROR:", err);
-    showToast("⚠️ Failed to approve listing");
-  }
-};
-
-window.rejectListing = async (listingId) => {
-  try {
-    await updateDoc(
-      doc(db, "listings", listingId),
-      {
-        status: "rejected"
-      }
-    );
-
-    showToast("Listing rejected ❌");
-    loadAdminListings();
-
-  } catch (err) {
-    console.error("REJECT LISTING ERROR:", err);
-    showToast("⚠️ Failed to reject listing");
-  }
-};
-
-function populateAdminSettingsForm() {
-  const diamondRateInput = document.getElementById("setting-diamond-rate");
-  const supportWhatsappInput = document.getElementById("setting-support-whatsapp");
-  const topupEnabledInput = document.getElementById("setting-topup-enabled");
-  const marketplaceEnabledInput = document.getElementById("setting-marketplace-enabled");
-  const maintenanceModeInput = document.getElementById("setting-maintenance-mode");
-
-  if (diamondRateInput) {
-    diamondRateInput.value = siteSettings.diamondRate;
-  }
-
-  if (supportWhatsappInput) {
-    supportWhatsappInput.value = siteSettings.supportWhatsapp;
-  }
-
-  if (topupEnabledInput) {
-    topupEnabledInput.checked = siteSettings.topupEnabled;
-  }
-
-  if (marketplaceEnabledInput) {
-    marketplaceEnabledInput.checked = siteSettings.marketplaceEnabled;
-  }
-
-  if (maintenanceModeInput) {
-    maintenanceModeInput.checked = siteSettings.maintenanceMode;
-  }
-}
-
-window.saveAdminSiteSettings = async () => {
-  await ensureSiteSettingsLoaded();
-
-  const user = auth.currentUser;
-
-  if (!user || !adminConfig.emails.includes(user.email.toLowerCase())) {
+  if (!auth.currentUser || !currentUserIsAdmin) {
     alert("Admin access required.");
     return;
   }
 
-  const diamondRate = Number(
-    document.getElementById("setting-diamond-rate")?.value
-  );
-  const supportWhatsapp = document
-    .getElementById("setting-support-whatsapp")
-    ?.value
-    .trim();
-
-  if (!Number.isFinite(diamondRate) || diamondRate <= 0) {
-    alert("Diamond rate must be a positive number.");
-    return;
-  }
-
-  if (!supportWhatsapp) {
-    alert("Support WhatsApp number is required.");
-    return;
-  }
-
-  const nextSettings = {
-    diamondRate,
-    supportWhatsapp,
-    topupEnabled: Boolean(
-      document.getElementById("setting-topup-enabled")?.checked
-    ),
-    marketplaceEnabled: Boolean(
-      document.getElementById("setting-marketplace-enabled")?.checked
-    ),
-    maintenanceMode: Boolean(
-      document.getElementById("setting-maintenance-mode")?.checked
-    ),
-    updatedAt: serverTimestamp(),
-    updatedBy: user.uid
-  };
-
   try {
-    showToast("Saving site settings...");
+    await updateDoc(doc(db, "listings", listingId), {
+      status: "approved",
+      approvedAt: serverTimestamp(),
+      approvedBy: auth.currentUser.uid,
+      updatedAt: serverTimestamp()
+    });
 
-    await setDoc(doc(db, "settings", "config"), nextSettings, { merge: true });
-    await loadSiteSettings();
-    populateAdminSettingsForm();
-    showToast("Site settings saved ✅");
+    window.showToast("Listing approved ✅");
+    loadAdminListings();
+    loadMarketplaceListings();
   } catch (err) {
-    console.error("SAVE SITE SETTINGS ERROR:", err);
-    alert(
-      "Could not save site settings:\n\n" +
-      err.code +
-      "\n\n" +
-      err.message
-    );
+    console.error("APPROVE LISTING ERROR:", err);
+    alert("Could not approve listing: " + err.message);
   }
 };
+
+window.rejectListing = async (listingId) => {
+  if (!auth.currentUser || !currentUserIsAdmin) {
+    alert("Admin access required.");
+    return;
+  }
+
+  try {
+    await updateDoc(doc(db, "listings", listingId), {
+      status: "rejected",
+      rejectedAt: serverTimestamp(),
+      rejectedBy: auth.currentUser.uid,
+      updatedAt: serverTimestamp()
+    });
+
+    window.showToast("Listing rejected ✅");
+    loadAdminListings();
+  } catch (err) {
+    console.error("REJECT LISTING ERROR:", err);
+    alert("Could not reject listing: " + err.message);
+  }
+};
+
+window.removeListing = async (listingId) => {
+  if (!auth.currentUser || !currentUserIsAdmin) {
+    alert("Admin access required.");
+    return;
+  }
+
+  if (!confirm("Remove this listing from marketplace/admin review?")) {
+    return;
+  }
+
+  try {
+    await updateDoc(doc(db, "listings", listingId), {
+      status: "removed",
+      removedAt: serverTimestamp(),
+      removedBy: auth.currentUser.uid,
+      updatedAt: serverTimestamp()
+    });
+
+    window.showToast("Listing removed ✅");
+    loadAdminListings();
+    loadMarketplaceListings();
+  } catch (err) {
+    console.error("REMOVE LISTING ERROR:", err);
+    alert("Could not remove listing: " + err.message);
+  }
+};
+
 
 async function loadAdminOrders() {
   const ordersList = document.getElementById("orders-list");
   const searchInput = document.getElementById("search-orders");
   const statusFilter = document.getElementById("status-filter");
+  const orderTypeFilter = document.getElementById("order-type-filter");
+  const gameFilter = document.getElementById("admin-game-filter");
 
   if (!ordersList) return;
 
@@ -1239,17 +1552,24 @@ async function loadAdminOrders() {
     function renderOrders() {
       const search = searchInput ? searchInput.value.toLowerCase() : "";
       const status = statusFilter ? statusFilter.value : "all";
+      const orderType = orderTypeFilter ? orderTypeFilter.value : "all";
+      const gameId = gameFilter ? gameFilter.value : "all";
 
       const filtered = orders.filter((order) => {
         const matchesSearch =
           (order.orderId || "").toLowerCase().includes(search) ||
           (order.customerEmail || "").toLowerCase().includes(search) ||
-          (order.gameUID || "").toLowerCase().includes(search);
+          (order.gameUID || "").toLowerCase().includes(search) ||
+          (order.item || "").toLowerCase().includes(search) ||
+          (order.listingId || "").toLowerCase().includes(search);
 
         const matchesStatus =
           status === "all" || order.status === status;
+        const matchesOrderType =
+          orderType === "all" || (order.orderType || "topup") === orderType;
 
-        return matchesSearch && matchesStatus;
+        const matchesGame = gameId === "all" || getOrderGameId(order) === gameId;
+        return matchesSearch && matchesStatus && matchesOrderType && matchesGame;
       });
 
       ordersList.replaceChildren();
@@ -1273,12 +1593,23 @@ async function loadAdminOrders() {
 
     renderOrders();
 
-    if (searchInput) {
-      searchInput.addEventListener("input", renderOrders);
-    }
+    if (ordersList.dataset.listenersBound !== "true") {
+      if (searchInput) {
+        searchInput.addEventListener("input", renderOrders);
+      }
 
-    if (statusFilter) {
-      statusFilter.addEventListener("change", renderOrders);
+      if (statusFilter) {
+        statusFilter.addEventListener("change", renderOrders);
+      }
+
+      if (orderTypeFilter) {
+        orderTypeFilter.addEventListener("change", renderOrders);
+      }
+      if (gameFilter) {
+        gameFilter.addEventListener("change", renderOrders);
+      }
+
+      ordersList.dataset.listenersBound = "true";
     }
 
   } catch (err) {
@@ -1296,7 +1627,7 @@ window.updateOrderStatus = async (orderDocId, newStatus) => {
   const user = auth.currentUser;
   const allowedStatuses = ["processing", "delivered", "failed"];
 
-  if (!user || !adminConfig.emails.includes(user.email.toLowerCase())) {
+  if (!user || !(await checkAdminAccess(user))) {
     alert("Admin access required.");
     return;
   }
@@ -1307,7 +1638,7 @@ window.updateOrderStatus = async (orderDocId, newStatus) => {
   }
 
   try {
-    showToast("Updating order status...");
+    window.showToast("Updating order status...");
 
     const orderRef = doc(db, "orders", orderDocId);
     const existingOrderSnap = await getDoc(orderRef);
@@ -1321,7 +1652,7 @@ window.updateOrderStatus = async (orderDocId, newStatus) => {
       updatedAt: serverTimestamp()
     });
 
-    showToast(`Order marked as ${newStatus} ✅`);
+    window.showToast(`Order marked as ${newStatus} ✅`);
 
     if (newStatus === "delivered" && !receiptAlreadySent) {
       const orderSnap = await getDoc(orderRef);
@@ -1342,8 +1673,8 @@ window.updateOrderStatus = async (orderDocId, newStatus) => {
       } else {
         showToast("Order delivered, but order data could not be found ⚠️");
       }
-    } else if (newStatus === "delivered" && receiptAlreadySent) {
-      showToast("Order delivered. Receipt was already sent earlier ✅");
+
+      window.showToast("Delivered receipt sent ✅");
     }
 
     loadAdminOrders();
@@ -1417,6 +1748,161 @@ async function loadUserOrders(userId) {
   }
 }
 
+function createSellerListingCard(listing) {
+  const card = document.createElement("div");
+  const title = document.createElement("h3");
+
+  card.className = "order-card";
+  title.textContent = listing.title || "Gaming Account";
+  card.appendChild(title);
+
+  appendListingField(card, "Game", getGame(getListingGameId(listing)).name);
+  appendListingField(card, "Price", formatNaira(listing.price));
+  appendListingField(card, "Region", listing.region);
+  appendListingField(card, "Rank", listing.rank);
+  appendListingField(card, "Level", listing.level);
+  appendListingField(card, "Status", listing.status);
+  appendListingField(card, "Date", formatDate(listing.createdAt));
+
+  if (listing.status === "pending-review") {
+    const cancelButton = document.createElement("button");
+
+    cancelButton.type = "button";
+    cancelButton.className = "secondary-btn full-btn";
+    cancelButton.textContent = "CANCEL PENDING LISTING";
+    cancelButton.addEventListener("click", () => window.cancelSellerListing(listing.id));
+    card.appendChild(cancelButton);
+  }
+
+  return card;
+}
+
+function updateSellerListingSummary(listings) {
+  const summary = document.getElementById("seller-listing-summary");
+
+  if (!summary) return;
+
+  const counts = {
+    "pending-review": 0,
+    approved: 0,
+    sold: 0,
+    rejected: 0
+  };
+
+  listings.forEach((listing) => {
+    if (Object.prototype.hasOwnProperty.call(counts, listing.status)) {
+      counts[listing.status] += 1;
+    }
+  });
+
+  const values = [
+    counts["pending-review"],
+    counts.approved,
+    counts.sold,
+    counts.rejected
+  ];
+
+  summary.querySelectorAll("h3").forEach((heading, index) => {
+    heading.textContent = values[index] || 0;
+  });
+}
+
+async function loadSellerListings(userId) {
+  const sellerList = document.getElementById("seller-listings-list");
+
+  if (!sellerList) return;
+
+  try {
+    const listingsQuery = query(
+      collection(db, "listings"),
+      where("sellerId", "==", userId)
+    );
+    const snapshot = await getDocs(listingsQuery);
+    const listings = [];
+
+    snapshot.forEach((docSnap) => {
+      listings.push({
+        id: docSnap.id,
+        ...docSnap.data()
+      });
+    });
+
+    listings.sort((first, second) => {
+      const firstCreatedAt = first.createdAt?.toMillis?.() || 0;
+      const secondCreatedAt = second.createdAt?.toMillis?.() || 0;
+
+      return secondCreatedAt - firstCreatedAt;
+    });
+
+    updateSellerListingSummary(listings);
+    sellerList.replaceChildren();
+
+    if (!listings.length) {
+      const emptyMessage = document.createElement("p");
+
+      emptyMessage.textContent = "You have not submitted any listings yet.";
+      sellerList.appendChild(emptyMessage);
+      return;
+    }
+
+    listings.forEach((listing) => {
+      sellerList.appendChild(createSellerListingCard(listing));
+    });
+  } catch (err) {
+    console.error("LOAD SELLER LISTINGS ERROR:", err);
+    sellerList.replaceChildren();
+
+    const errorMessage = document.createElement("p");
+
+    errorMessage.textContent = "Could not load your listings.";
+    sellerList.appendChild(errorMessage);
+  }
+}
+
+window.cancelSellerListing = async (listingId) => {
+  const user = auth.currentUser;
+
+  if (!user) {
+    alert("Please login first ⚡");
+    return;
+  }
+
+  if (!confirm("Cancel this pending listing?")) {
+    return;
+  }
+
+  try {
+    const listingRef = doc(db, "listings", listingId);
+    const listingSnap = await getDoc(listingRef);
+
+    if (!listingSnap.exists()) {
+      alert("Listing not found.");
+      return;
+    }
+
+    const listing = listingSnap.data();
+
+    if (listing.sellerId !== user.uid || listing.status !== "pending-review") {
+      alert("Only your own pending listings can be cancelled.");
+      return;
+    }
+
+    await updateDoc(listingRef, {
+      status: "removed",
+      removedAt: serverTimestamp(),
+      removedBy: user.uid,
+      updatedAt: serverTimestamp()
+    });
+
+    window.showToast("Pending listing cancelled ✅");
+    loadSellerListings(user.uid);
+  } catch (err) {
+    console.error("CANCEL SELLER LISTING ERROR:", err);
+    alert("Could not cancel listing: " + err.message);
+  }
+};
+
+
 function unlockTopupForUser(user) {
   const diamonds = document.getElementById("diamonds");
   const diamondGrid = document.getElementById("diamond-grid");
@@ -1458,11 +1944,10 @@ function lockTopupForGuest() {
 }
 
 onAuthStateChanged(auth, async (user) => {
-  try {
-    console.log("AUTH STATE CHANGED:", user ? "signed-in" : "signed-out");
-    await ensureSiteSettingsLoaded();
+  await ensureSiteSettingsLoaded();
 
-  const storeLink = document.getElementById("store-link");
+  try {
+    const storeLink = document.getElementById("store-link");
   const heroLoginBtn = document.getElementById("hero-login-btn");
   const navLoginBtn = document.getElementById("nav-login-btn");
   const emailInput = document.getElementById("email");
@@ -1479,6 +1964,7 @@ onAuthStateChanged(auth, async (user) => {
 
   const sellLoginBox = document.getElementById("sell-login-box");
   const sellerFormBox = document.getElementById("seller-form-box");
+  const sellerDashboardSection = document.getElementById("seller-dashboard-section");
   const marketplaceGrid = document.getElementById("marketplace-grid");
   const marketplaceLoginBox = document.getElementById("marketplace-login-box");
 
@@ -1488,7 +1974,8 @@ onAuthStateChanged(auth, async (user) => {
 
   if (user) {
     const loggedInEmail = (user.email || "").toLowerCase();
-    const isAdmin = adminConfig.emails.includes(loggedInEmail);
+    const isAdmin = await checkAdminAccess(user);
+    currentUserIsAdmin = isAdmin;
 
     if (storeLink) {
       storeLink.style.display = "inline-block";
@@ -1502,6 +1989,7 @@ onAuthStateChanged(auth, async (user) => {
       ordersLink.style.display = "inline-block";
     }
 
+    setElementText(document.getElementById("nav-user-label"), user.displayName || user.email || "Account");
     if (navLoginBtn) {
       navLoginBtn.textContent = "LOGOUT";
       navLoginBtn.onclick = window.logout;
@@ -1527,6 +2015,11 @@ onAuthStateChanged(auth, async (user) => {
       sellerFormBox.classList.remove("hidden");
     }
 
+    if (sellerDashboardSection) {
+      sellerDashboardSection.classList.remove("hidden");
+      loadSellerListings(user.uid);
+    }
+
     if (marketplaceGrid && isMarketplaceAvailable()) {
       marketplaceGrid.classList.remove("hidden");
     }
@@ -1541,9 +2034,9 @@ onAuthStateChanged(auth, async (user) => {
 
     unlockTopupForUser(user);
     loadUserOrders(user.uid);
-    loadProfile(user).catch((error) => console.error("PROFILE LOAD ERROR:", error));
     if (isMarketplaceAvailable()) {
-      loadMarketplaceListings(); // Load approved listings with search/filter support
+      initializeMarketplaceControls();
+      loadMarketplaceListings();
     } else {
       applySiteSettings();
     }
@@ -1581,8 +2074,7 @@ onAuthStateChanged(auth, async (user) => {
 
   } else {
 
-    document.getElementById("profile-section")?.classList.add("hidden");
-    document.getElementById("profile-login-box")?.classList.remove("hidden");
+    currentUserIsAdmin = false;
 
     if (storeLink) {
       storeLink.style.display = "none";
@@ -1612,6 +2104,10 @@ onAuthStateChanged(auth, async (user) => {
       sellerFormBox.classList.add("hidden");
     }
 
+    if (sellerDashboardSection) {
+      sellerDashboardSection.classList.add("hidden");
+    }
+
     if (marketplaceGrid) {
       marketplaceGrid.classList.add("hidden");
     }
@@ -1620,8 +2116,9 @@ onAuthStateChanged(auth, async (user) => {
       marketplaceLoginBox.classList.remove("hidden");
     }
 
+    setElementText(document.getElementById("nav-user-label"), "Guest");
     if (navLoginBtn) {
-      navLoginBtn.textContent = "LOGIN";
+      navLoginBtn.textContent = "LOGIN / SIGN UP";
       navLoginBtn.onclick = window.signInWithGoogle;
     }
 
@@ -1654,6 +2151,14 @@ onAuthStateChanged(auth, async (user) => {
     }
 
     lockTopupForGuest();
+    // The landing page can safely show approved public listings without a session.
+    if (document.getElementById("home-featured-grid") && isMarketplaceAvailable()) {
+      loadMarketplaceListings();
+    }
+  }
+  } catch (err) {
+    console.error("AUTH STATE HANDLER ERROR:", err);
+    showToast("Login loaded, but some page features failed to update ⚠️");
   }
   } catch (err) {
     console.error("AUTH STATE HANDLER ERROR:", err);
@@ -1687,13 +2192,9 @@ window.openOrderModal = async (item, price) => {
     return;
   }
 
-  currentOrder = {
-    item,
-    price: numPrice,
-    gameId: selectedGameId,
-    offerId: "",
-    player: null
-  };
+  currentOrder.item = item;
+  currentOrder.price = numPrice;
+  currentOrder.gameId = currentOrder.gameId || "free-fire";
 
   const summary = document.getElementById("order-summary");
 
@@ -1729,10 +2230,19 @@ window.closeModal = () => {
   }
 };
 
+window.openTopupPackageOrder = async (button) => {
+  currentOrder.gameId = button?.dataset?.game || "free-fire";
+  const item = button?.dataset?.item || "Game Top Up";
+  const price = Number(button?.dataset?.price);
+  if (!Number.isFinite(price) || price <= 0) return alert("Invalid top-up package ⚡");
+  openOrderModal(item, price);
+};
+
 window.openDiamondPackageOrder = async (button) => {
   await ensureSiteSettingsLoaded();
 
   const amount = Number(button?.dataset?.diamonds);
+  currentOrder.gameId = "free-fire";
   const item = button?.dataset?.item || `${amount} Diamonds`;
 
   if (!Number.isInteger(amount) || amount <= 0) {
@@ -1785,13 +2295,15 @@ window.completeOrder = async () => {
     return;
   }
 
-  const orderId = generateOrderId();
+  const orderId = window.generateOrderId();
 
   try {
-    showToast("Submitting order...");
+    window.showToast("Submitting order...");
 
     const orderData = {
       orderId: orderId,
+      orderType: "topup",
+      gameId: currentOrder.gameId || "free-fire",
       userId: user.uid,
       customerName: user.displayName,
       customerEmail: email,
@@ -1806,7 +2318,7 @@ window.completeOrder = async () => {
       status: "processing"
     };
 
-    await addDoc(collection(db, "orders"), {
+    await setDoc(doc(db, "orders", orderId), {
       ...orderData,
       createdAt: serverTimestamp()
     });
@@ -1814,22 +2326,16 @@ window.completeOrder = async () => {
     const customerEmailSent = await sendCustomerConfirmationEmail(orderData);
     const adminEmailSent = await sendAdminOrderEmail(orderData);
 
-    closeModal();
+    window.closeModal();
 
     document.getElementById("uid").value = "";
     document.getElementById("email").value = user.email;
 
-    if (customerEmailSent && adminEmailSent) {
-      showToast(`Order submitted successfully ⚡ Order ID: ${orderId}`);
-    } else {
-      showToast(
-        `Order submitted successfully ⚡ Order ID: ${orderId}. Email notification could not be sent.`
-      );
-    }
+    window.showToast(`Order submitted successfully ⚡ Order ID: ${orderId}`);
 
     loadUserOrders(user.uid);
 
-    if (adminConfig.emails.includes(user.email.toLowerCase())) {
+    if (await checkAdminAccess(user)) {
       loadAdminOrders();
     }
 
@@ -1845,10 +2351,38 @@ window.completeOrder = async () => {
   }
 };
 
+function initializeTopupGameSelector() {
+  const choices = document.querySelectorAll(".game-choice");
+  if (!choices.length) return;
+  const setGame = (gameId) => {
+    const game = getGame(gameId);
+    choices.forEach((choice) => choice.classList.toggle("active", choice.dataset.game === gameId));
+    document.querySelectorAll(".diamond-card:not(.cod-product)").forEach((card) => card.classList.toggle("hidden", gameId !== "free-fire"));
+    document.querySelectorAll(".cod-product").forEach((card) => card.classList.toggle("hidden", gameId !== "call-of-duty"));
+    document.querySelector(".custom-diamond-box")?.classList.toggle("hidden", gameId !== "free-fire");
+    const uid = document.getElementById("uid"); if (uid) uid.placeholder = `Enter ${game.uidLabel}`;
+    const note = document.getElementById("topup-game-note"); if (note) note.textContent = `${game.name} · ${game.currency} · Enter your ${game.uidLabel}`;
+  };
+  choices.forEach((choice) => choice.addEventListener("click", () => setGame(choice.dataset.game)));
+  setGame(new URLSearchParams(location.search).get("game") === "call-of-duty" ? "call-of-duty" : "free-fire");
+}
+initializeTopupGameSelector();
+
 window.toggleMobileMenu = () => {
-  const nav = document.querySelector("header nav");
-  if (nav) setMobileMenuOpen(!nav.classList.contains("active"));
-};
+  const nav = document.querySelector(".top-navbar .primary-nav") || document.querySelector("header nav");
+
+window.submitCustomDiamond = async () => {
+  await ensureSiteSettingsLoaded();
+
+  if (!isTopupAvailable()) {
+    alert(
+      siteSettings.maintenanceMode
+        ? "Custom top-up is disabled during maintenance."
+        : "Diamond Top-up is temporarily unavailable."
+    );
+    applySiteSettings();
+    return;
+  }
 
 window.submitCustomDiamond = async () => {
   await ensureSiteSettingsLoaded();
@@ -1883,17 +2417,17 @@ window.submitCustomDiamond = async () => {
     return;
   }
 
-  if (!GAMES[selectedGameId]?.supportsCustomDiamonds) {
-    alert("Custom diamond requests are currently available for Free Fire only.");
-    return;
-  }
   const estimatedPrice = calculateDiamondPrice(amount);
-  await openOrderModal(`${amount} Custom Diamonds`, estimatedPrice);
+
+  window.openOrderModal(
+    `${amount} Custom Diamonds`,
+    estimatedPrice
+  );
 };
 
 document.addEventListener("keydown", (e) => {
   if (e.key === "Escape") {
-    closeModal();
+    window.closeModal();
   }
 });
 
@@ -1949,8 +2483,9 @@ CUSTOMER EMAIL: ${user.email}
 I want to buy this account. Please confirm availability.
 `;
 
+  const whatsappNumber = getSupportWhatsappNumber();
   const whatsappURL =
-    `https://wa.me/${siteSettings.supportWhatsapp}?text=${encodeURIComponent(message)}`;
+    `https://wa.me/${whatsappNumber}?text=${encodeURIComponent(message)}`;
 
   window.open(whatsappURL, "_blank");
 };
@@ -1975,15 +2510,16 @@ window.submitAccountListing = async () => {
     return;
   }
 
+  const gameId = document.getElementById("seller-game")?.value || "free-fire";
   const title = document.getElementById("seller-account-title").value.trim();
   const region = document.getElementById("seller-region").value.trim();
   const price = document.getElementById("seller-price").value.trim();
   const level = document.getElementById("seller-level").value.trim();
   const rank = document.getElementById("seller-rank").value.trim();
   const description = document.getElementById("seller-description").value.trim();
-  const image1 = getValidImageUrl(document.getElementById("seller-image-1").value);
-  const image2 = getValidImageUrl(document.getElementById("seller-image-2").value);
-  const image3 = getValidImageUrl(document.getElementById("seller-image-3").value);
+  const image1 = getValidImageUrl(document.getElementById("seller-image-1")?.value);
+  const image2 = getValidImageUrl(document.getElementById("seller-image-2")?.value);
+  const image3 = getValidImageUrl(document.getElementById("seller-image-3")?.value);
   const contact = document.getElementById("seller-contact").value.trim();
 
   if (!title || !region || !price || !level || !rank || !description || !contact) {
@@ -1999,12 +2535,13 @@ window.submitAccountListing = async () => {
   }
 
   try {
-    showToast("Submitting listing for review...");
+    window.showToast("Submitting listing for review...");
 
-    await addDoc(collection(db, "listings"), {
+    const listingData = {
       sellerId: user.uid,
       sellerName: user.displayName,
       sellerEmail: user.email,
+      gameId,
       title,
       region,
       price: numericPrice,
@@ -2016,12 +2553,14 @@ window.submitAccountListing = async () => {
       image3,
       contact,
       status: "pending-review",
-      createdAt: serverTimestamp()
-    });
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp()
+    };
+
+    await addDoc(collection(db, "listings"), listingData);
 
     try {
       await sendEmail(
-        "admin account-listing notification",
         {
           to_email: adminConfig.emails[0],
           user_email: adminConfig.emails[0],
@@ -2052,7 +2591,8 @@ window.submitAccountListing = async () => {
     document.getElementById("seller-image-3").value = "";
     document.getElementById("seller-contact").value = "";
 
-    showToast("Listing submitted for admin review ✅");
+    window.showToast("Listing submitted for admin review ✅");
+    loadSellerListings(user.uid);
   } catch (err) {
     console.error("LISTING SUBMIT ERROR:", err);
 
@@ -2064,3 +2604,10 @@ window.submitAccountListing = async () => {
     );
   }
 };
+
+// Lightweight client-side order filter for the My Orders page.
+document.getElementById("order-filter")?.addEventListener("change", (event) => {
+  document.querySelectorAll("#history-list .order-card").forEach((card) => {
+    card.hidden = event.target.value !== "all" && !card.textContent.includes(event.target.value === "topup" ? "TOP-UP ORDER" : "ACCOUNT PURCHASE");
+  });
+});

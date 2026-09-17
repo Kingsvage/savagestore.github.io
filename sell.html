@@ -77,7 +77,7 @@
         </h1>
 
         <p>
-          Submit your Free Fire account details. Savage Store admin will review your listing before it appears in the marketplace.
+          Choose Free Fire or Call of Duty, share the account details, and our admin team will review your listing before it appears in the marketplace.
         </p>
 
       </div>
@@ -109,11 +109,13 @@
     </div>
 
     <div class="seller-form-box hidden" id="seller-form-box">
+      <label for="seller-game">SELECT GAME</label>
+      <select id="seller-game"><option value="free-fire">Free Fire</option><option value="call-of-duty">Call of Duty Mobile</option></select>
 
       <input
         type="text"
         id="seller-account-title"
-        placeholder="Account title e.g Heroic Free Fire Account"
+        placeholder="Account title e.g Heroic Level 65 Account"
       >
 
       <input
@@ -144,7 +146,7 @@
 
       <textarea
         id="seller-description"
-        placeholder="Describe account skins, bundles, weapons, pets, UID quality, etc."
+        placeholder="Describe account inventory, progression, loadout and other important details."
       ></textarea>
 
       <input
@@ -171,6 +173,24 @@
         placeholder="Your WhatsApp number"
       >
 
+      <input
+        type="url"
+        id="seller-image-1"
+        placeholder="Screenshot URL 1"
+      >
+
+      <input
+        type="url"
+        id="seller-image-2"
+        placeholder="Screenshot URL 2"
+      >
+
+      <input
+        type="url"
+        id="seller-image-3"
+        placeholder="Screenshot URL 3"
+      >
+
       <div class="payment-warning">
         ⚠ IMPORTANT DISCLAIMER
 
@@ -193,6 +213,24 @@
 
     </div>
 
+  </section>
+
+  <section class="features-section hidden" id="seller-dashboard-section">
+    <div class="section-title">
+      <span>SELLER DASHBOARD</span>
+      <h2>MY LISTINGS</h2>
+    </div>
+
+    <div class="seller-status-grid" id="seller-listing-summary">
+      <div class="analytics-card"><h3>0</h3><p>Pending Review</p></div>
+      <div class="analytics-card"><h3>0</h3><p>Approved</p></div>
+      <div class="analytics-card"><h3>0</h3><p>Sold</p></div>
+      <div class="analytics-card"><h3>0</h3><p>Rejected</p></div>
+    </div>
+
+    <div id="seller-listings-list" class="orders-list">
+      <p>Submit a listing to see it here.</p>
+    </div>
   </section>
 
   <footer>

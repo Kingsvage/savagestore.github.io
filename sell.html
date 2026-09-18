@@ -16,7 +16,7 @@
     rel="stylesheet"
   >
 
-  <link rel="stylesheet" href="style.css?v=46">
+  <link rel="stylesheet" href="style.css?v=60">
 
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 </head>
@@ -38,11 +38,12 @@
       </div>
 
       <nav>
-        <a href="index.html">Home</a>
-        <a href="topup.html">Top Up</a>
-        <a href="marketplace.html">Marketplace</a>
-        <a href="sell.html">Sell Account</a>
-        <a href="orders.html">My Orders</a>
+        <a href="index.html">🏠 Home</a>
+        <a href="topup.html">💎 Top Up</a>
+        <a href="marketplace.html">🛒 Marketplace</a>
+        <a href="sell.html">💰 Sell Account</a>
+        <a href="orders.html">📦 My Orders</a>
+        <a href="profile.html">👤 Profile</a>
 
         <a href="admin.html" id="admin-link" style="display:none;">
           Admin
@@ -115,6 +116,8 @@
         placeholder="Account title e.g Heroic Free Fire Account"
       >
 
+      <select id="seller-game"><option value="free-fire">Free Fire</option><option value="call-of-duty">Call of Duty Mobile</option></select>
+
       <input
         type="text"
         id="seller-region"
@@ -141,6 +144,10 @@
         placeholder="Rank e.g Heroic / Grandmaster"
       >
 
+      <input type="text" id="seller-account-uid" placeholder="Public game UID (if safe to share)">
+
+      <textarea id="seller-rare-items" placeholder="Rare items, skins, characters, weapons (public)"></textarea>
+
       <textarea
         id="seller-description"
         placeholder="Describe account skins, bundles, weapons, pets, UID quality, etc."
@@ -148,9 +155,37 @@
 
       <input
         type="text"
+        id="seller-image-1"
+        placeholder="Screenshot URL 1"
+      >
+
+      <input
+        type="text"
+        id="seller-image-2"
+        placeholder="Screenshot URL 2"
+      >
+
+      <input
+        type="text"
+        id="seller-image-3"
+        placeholder="Screenshot URL 3"
+      >
+
+      <input
+        type="text"
         id="seller-contact"
         placeholder="Your WhatsApp number"
       >
+
+      <section class="private-verification-box">
+        <h3>🔒 PRIVATE — ADMIN VERIFICATION ONLY</h3>
+        <p>These details are stored separately from the public listing and are only available to authorized admins for verification. Never enter passwords for unrelated personal Google, Facebook, Apple, or other personal accounts.</p>
+        <select id="seller-login-method"><option value="email">Email</option><option value="username">Username</option><option value="game-id">Game ID</option><option value="other">Other</option></select>
+        <input type="text" id="seller-login-identifier" autocomplete="username" placeholder="Private login identifier">
+        <div class="password-field"><input type="password" id="seller-login-password" autocomplete="new-password" placeholder="Private account password"><button type="button" onclick="toggleSellerPassword()">SHOW</button></div>
+        <textarea id="seller-verification-info" placeholder="Private verification information for admin only"></textarea>
+      </section>
+      <label class="seller-agreement"><input type="checkbox" id="seller-agreement"> <span>I have read and agree to the Marketplace Seller Agreement, including the mandatory 5% Savage Store service fee on the final completed sale price.</span></label>
 
       <div class="payment-warning">
         ⚠ IMPORTANT DISCLAIMER
@@ -167,7 +202,9 @@
       <button
         type="button"
         class="primary-btn full-btn"
+        id="seller-submit-btn"
         onclick="submitAccountListing()"
+        disabled
       >
         SUBMIT ACCOUNT FOR REVIEW ⚡
       </button>
@@ -193,7 +230,7 @@
 
   <div class="toast hidden" id="toast"></div>
 
-  <script type="module" src="./script.js?v=51"></script>
+  <script type="module" src="./script.js?v=60"></script>
 
 </body>
 </html>

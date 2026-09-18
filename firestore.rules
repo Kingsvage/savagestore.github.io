@@ -2,12 +2,20 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    function signedIn() {
-      return request.auth != null;
+    function signedIn() { return request.auth != null; }
+    function isOwner(userId) { return signedIn() && request.auth.uid == userId; }
+    function isAdmin() { return signedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid)); }
+    function onlyProfileFields() {
+      return request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+        'uid', 'name', 'email', 'photo', 'phone', 'freeFireUid', 'codMobileUid',
+        'country', 'preferredGame', 'updatedAt'
+      ]);
     }
 
-    function isOwner(userId) {
-      return signedIn() && request.auth.uid == userId;
+    match /admins/{adminId} { allow read: if isOwner(adminId) || isAdmin(); allow write: if false; }
+    match /settings/{settingId} {
+      allow read: if settingId == 'config';
+      allow write: if settingId == 'config' && isAdmin();
     }
 
     // Create an /admins/{uid} document manually in the Firebase console for each admin.
@@ -119,12 +127,11 @@ service cloud.firestore {
     }
 
     match /users/{userId} {
-      allow create, update: if isOwner(userId) &&
-        request.resource.data.uid == request.auth.uid;
+      allow create: if isOwner(userId) && request.resource.data.uid == request.auth.uid;
       allow read: if isOwner(userId) || isAdmin();
+      allow update: if isOwner(userId) && request.resource.data.uid == request.auth.uid && onlyProfileFields();
       allow delete: if false;
     }
-
     match /orders/{orderId} {
       allow create: if signedIn() &&
         request.resource.data.orderId == orderId &&
@@ -141,7 +148,6 @@ service cloud.firestore {
 
       allow delete: if isAdmin();
     }
-
     match /listings/{listingId} {
       allow create: if signedIn() &&
         request.resource.data.sellerId == request.auth.uid &&
@@ -165,9 +171,6 @@ service cloud.firestore {
 
       allow delete: if isAdmin();
     }
-
-    match /{document=**} {
-      allow read, write: if false;
-    }
+    match /{document=**} { allow read, write: if false; }
   }
 }

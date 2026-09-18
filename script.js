@@ -26,11 +26,14 @@ import {
   runTransaction
 } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-firestore.js";
 
+import { getFunctions, httpsCallable } from "https://www.gstatic.com/firebasejs/10.12.2/firebase-functions.js";
+
 import { firebaseConfig, emailConfig, adminConfig } from "./config.js";
 
 const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
+const functions = getFunctions(app, "us-central1");
 const provider = new GoogleAuthProvider();
 
 const authPersistenceReady = setPersistence(auth, browserLocalPersistence).catch((err) => {
@@ -158,7 +161,68 @@ async function loadSiteSettings() {
 
 const siteSettingsReady = loadSiteSettings();
 
-function setText(element, value) {
+function normalizeBoolean(value, fallback) {
+  return typeof value === "boolean" ? value : fallback;
+}
+
+function normalizePositiveNumber(value, fallback) {
+  const numericValue = Number(value);
+
+  return Number.isFinite(numericValue) && numericValue > 0
+    ? numericValue
+    : fallback;
+}
+
+function normalizeString(value, fallback) {
+  return typeof value === "string" && value.trim()
+    ? value.trim()
+    : fallback;
+}
+
+async function loadSiteSettings() {
+  try {
+    const settingsSnap = await getDoc(doc(db, "settings", "config"));
+
+    if (settingsSnap.exists()) {
+      const data = settingsSnap.data();
+
+      siteSettings = {
+        ...siteSettings,
+        diamondRate: normalizePositiveNumber(
+          data.diamondRate,
+          siteSettings.diamondRate
+        ),
+        topupEnabled: normalizeBoolean(
+          data.topupEnabled,
+          siteSettings.topupEnabled
+        ),
+        marketplaceEnabled: normalizeBoolean(
+          data.marketplaceEnabled,
+          siteSettings.marketplaceEnabled
+        ),
+        maintenanceMode: normalizeBoolean(
+          data.maintenanceMode,
+          siteSettings.maintenanceMode
+        ),
+        supportWhatsapp: normalizeString(
+          data.supportWhatsapp,
+          siteSettings.supportWhatsapp
+        )
+      };
+    }
+
+    console.log("SITE SETTINGS LOADED:", siteSettings);
+  } catch (err) {
+    console.error("LOAD SITE SETTINGS ERROR:", err);
+  }
+
+  applySiteSettings();
+  return siteSettings;
+}
+
+const siteSettingsReady = loadSiteSettings();
+
+function setElementText(element, value) {
   if (element) {
     element.textContent = value;
   }
@@ -633,6 +697,19 @@ function setElementText(element, value) {
   setText(element, value);
 }
 
+function setSelectedGame(gameId) {
+  if (!GAMES[gameId]) return;
+  selectedGameId = gameId;
+  document.querySelectorAll("[data-game-select]").forEach((button) => {
+    button.classList.toggle("active", button.dataset.gameSelect === gameId);
+    button.setAttribute("aria-pressed", String(button.dataset.gameSelect === gameId));
+  });
+  document.querySelectorAll("[data-game-name]").forEach((element) => { element.textContent = GAMES[gameId].name; });
+  applySiteSettings();
+}
+
+window.selectGame = setSelectedGame;
+
 window.scrollToSection = (id) => {
   const section = document.getElementById(id);
 
@@ -673,6 +750,110 @@ async function saveUser(user) {
   );
 }
 
+async function loadProfile(user) {
+  const section = document.getElementById("profile-section");
+  const loginBox = document.getElementById("profile-login-box");
+  if (!section || !loginBox) return;
+  loginBox.classList.add("hidden");
+  section.classList.remove("hidden");
+  const profileSnap = await getDoc(doc(db, "users", user.uid));
+  const profile = profileSnap.exists() ? profileSnap.data() : {};
+  const values = {
+    "profile-name": user.displayName || "Savage Store player",
+    "profile-email": user.email || "",
+    "profile-phone": profile.phone || "",
+    "profile-free-fire-uid": profile.freeFireUid || "",
+    "profile-cod-uid": profile.codMobileUid || "",
+    "profile-country": profile.country || "",
+    "profile-preferred-game": profile.preferredGame || "free-fire"
+  };
+  Object.entries(values).forEach(([id, value]) => {
+    const element = document.getElementById(id);
+    if (!element) return;
+    if ("value" in element) element.value = value;
+    else element.textContent = value;
+  });
+  const photo = document.getElementById("profile-photo");
+  if (photo) photo.src = user.photoURL || DEFAULT_LISTING_IMAGE;
+  const created = document.getElementById("profile-created");
+  if (created) created.textContent = user.metadata?.creationTime ? `Account created: ${new Date(user.metadata.creationTime).toLocaleDateString()}` : "";
+}
+
+async function saveProfile(event) {
+  event.preventDefault();
+  const user = auth.currentUser;
+  if (!user) return;
+  const read = (id) => document.getElementById(id)?.value.trim() || "";
+  const profileData = {
+    uid: user.uid,
+    phone: read("profile-phone"),
+    freeFireUid: read("profile-free-fire-uid"),
+    codMobileUid: read("profile-cod-uid"),
+    country: read("profile-country"),
+    preferredGame: document.getElementById("profile-preferred-game")?.value || "free-fire",
+    updatedAt: serverTimestamp()
+  };
+  try {
+    showToast("Saving profile...");
+    await setDoc(doc(db, "users", user.uid), profileData, { merge: true });
+    showToast("Profile saved ✅");
+  } catch (error) {
+    console.error("PROFILE SAVE ERROR:", error);
+    showToast("Could not save profile. Please try again.");
+  }
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  initializeNavigation();
+  document.getElementById("profile-form")?.addEventListener("submit", saveProfile);
+  document.querySelectorAll("nav a").forEach((link) => {
+    if (new URL(link.href).pathname === window.location.pathname) link.setAttribute("aria-current", "page");
+  });
+  setSelectedGame(document.querySelector("[data-game-select].active")?.dataset.gameSelect || selectedGameId);
+});
+
+function setMobileMenuOpen(open) {
+  const nav = document.querySelector("header nav");
+  const button = document.getElementById("mobile-menu-toggle");
+  if (!nav || !button) return;
+  nav.classList.toggle("active", open);
+  button.setAttribute("aria-expanded", String(open));
+}
+
+function initializeNavigation() {
+  const header = document.querySelector("header");
+  const nav = header?.querySelector("nav");
+  if (!header || !nav || document.getElementById("mobile-menu-toggle")) return;
+  const button = document.createElement("button");
+  button.id = "mobile-menu-toggle";
+  button.type = "button";
+  button.className = "mobile-menu-toggle";
+  button.setAttribute("aria-label", "Open navigation menu");
+  button.setAttribute("aria-expanded", "false");
+  button.textContent = "☰";
+  button.addEventListener("click", () => setMobileMenuOpen(!nav.classList.contains("active")));
+  nav.querySelectorAll("a").forEach((link) => link.addEventListener("click", () => setMobileMenuOpen(false)));
+  document.addEventListener("click", (event) => { if (!header.contains(event.target)) setMobileMenuOpen(false); });
+  document.addEventListener("keydown", (event) => { if (event.key === "Escape") setMobileMenuOpen(false); });
+  header.insertBefore(button, nav);
+}
+
+function setLoginOverlay(visible, message = "Connecting to Google…") {
+  let overlay = document.getElementById("login-overlay");
+  if (!overlay && visible) {
+    overlay = document.createElement("div");
+    overlay.id = "login-overlay";
+    overlay.className = "login-overlay";
+    overlay.setAttribute("role", "status");
+    overlay.setAttribute("aria-live", "polite");
+    overlay.innerHTML = '<div class="login-dialog"><span class="login-spinner"></span><strong></strong><p>Please complete the secure Google sign-in window.</p></div>';
+    document.body.appendChild(overlay);
+  }
+  if (!overlay) return;
+  overlay.querySelector("strong").textContent = message;
+  overlay.classList.toggle("hidden", !visible);
+}
+
 window.signInWithGoogle = async () => {
   try {
     window.showToast("Opening Google login...");
@@ -697,6 +878,8 @@ window.signInWithGoogle = async () => {
       "\n\n" +
       err.message
     );
+  } finally {
+    setLoginOverlay(false);
   }
 };
 
@@ -1977,6 +2160,10 @@ onAuthStateChanged(auth, async (user) => {
     console.error("AUTH STATE HANDLER ERROR:", err);
     showToast("Login loaded, but some page features failed to update ⚠️");
   }
+  } catch (err) {
+    console.error("AUTH STATE HANDLER ERROR:", err);
+    showToast("Login loaded, but some page features failed to update ⚠️");
+  }
 });
 
 window.openOrderModal = async (item, price) => {
@@ -2122,9 +2309,12 @@ window.completeOrder = async () => {
       customerEmail: email,
       googleEmail: user.email,
       gameUID: uid,
+      gameId: currentOrder.gameId,
+      gameName: GAMES[currentOrder.gameId]?.name || currentOrder.gameId,
       item: currentOrder.item,
       price: currentOrder.price,
-      paymentProof: "Proof system not required yet",
+      paymentStatus: "pending",
+      fulfillmentStatus: "pending",
       status: "processing"
     };
 
@@ -2181,10 +2371,18 @@ initializeTopupGameSelector();
 window.toggleMobileMenu = () => {
   const nav = document.querySelector(".top-navbar .primary-nav") || document.querySelector("header nav");
 
-  if (nav) {
-    nav.classList.toggle("active");
+window.submitCustomDiamond = async () => {
+  await ensureSiteSettingsLoaded();
+
+  if (!isTopupAvailable()) {
+    alert(
+      siteSettings.maintenanceMode
+        ? "Custom top-up is disabled during maintenance."
+        : "Diamond Top-up is temporarily unavailable."
+    );
+    applySiteSettings();
+    return;
   }
-};
 
 window.submitCustomDiamond = async () => {
   await ensureSiteSettingsLoaded();

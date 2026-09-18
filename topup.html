@@ -43,11 +43,12 @@
       </div>
 
       <nav>
-        <a href="index.html">Home</a>
-        <a href="topup.html">Top Up</a>
-        <a href="marketplace.html">Marketplace</a>
-        <a href="sell.html">Sell Account</a>
-        <a href="orders.html">My Orders</a>
+        <a href="index.html">🏠 Home</a>
+        <a href="topup.html">💎 Top Up</a>
+        <a href="marketplace.html">🛒 Marketplace</a>
+        <a href="sell.html">💰 Sell Account</a>
+        <a href="orders.html">📦 My Orders</a>
+        <a href="profile.html">👤 Profile</a>
        <a href="admin.html" id="admin-link" style="display:none;">
   Admin
 </a>
@@ -82,6 +83,11 @@
         <p>
           Select Free Fire or Call of Duty, choose the right currency package, then track your order.
         </p>
+
+        <div class="game-selector" role="group" aria-label="Select game">
+          <button type="button" class="game-select active" data-game-select="free-fire" aria-pressed="true" onclick="selectGame('free-fire')">Free Fire</button>
+          <button type="button" class="game-select" data-game-select="call-of-duty" aria-pressed="false" onclick="selectGame('call-of-duty')">COD Mobile</button>
+        </div>
 
         <div class="hero-buttons">
 
@@ -332,7 +338,7 @@
     <p>Savage Store © 2026</p>
 
     <span>
-      Free Fire Top Up • Fast Processing • Secure Orders
+      Multi-game Top Up • Fast Processing • Secure Orders
     </span>
 
   </footer>

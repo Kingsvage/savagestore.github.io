@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
 
-  <title>Savage Store | Free Fire Top Up</title>
+  <title>Savage Store | Game Top Up</title>
 
   <meta
     name="description"
@@ -21,7 +21,7 @@
     rel="stylesheet"
   >
 
-<link rel="stylesheet" href="style.css?v=60">
+<link rel="stylesheet" href="style.css?v=62">
 
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 </head>
@@ -85,8 +85,8 @@
         </p>
 
         <div class="game-selector" role="group" aria-label="Select game">
-          <button type="button" class="game-select active" data-game-select="free-fire" aria-pressed="true" onclick="selectGame('free-fire')">Free Fire</button>
-          <button type="button" class="game-select" data-game-select="call-of-duty" aria-pressed="false" onclick="selectGame('call-of-duty')">COD Mobile</button>
+          <button type="button" class="game-select active" data-game-select="free-fire" aria-pressed="true">Free Fire</button>
+          <button type="button" class="game-select" data-game-select="call-of-duty" aria-pressed="false">COD Mobile</button>
         </div>
 
         <div class="hero-buttons">
@@ -125,7 +125,7 @@
           <h3>Secure Top Up</h3>
 
 <p id="hero-card-message">
-  Login to unlock diamond packages.
+  Sign in to view Free Fire Diamonds or Call of Duty Points packages.
 </p>
 
 <div class="price-box">
@@ -151,11 +151,11 @@
 
   <section class="live-bar">
     <div class="live-track">
-      🔥 Fast Free Fire top-up •
-      💎 UID payment narration required •
-      ⚡ Silent admin processing •
-      📩 Email confirmation enabled •
-      🎮 Savage Store gaming platform
+      Server-priced game packages •
+      Secure Paystack checkout •
+      Webhook-verified payment •
+      Order tracking •
+      Savage Store gaming platform
     </div>
   </section>
 
@@ -163,13 +163,13 @@
 
     <div class="section-title">
       <span>TOP UP</span>
-      <h2>DIAMOND PACKAGES</h2>
+      <h2>GAME TOP UP</h2>
     </div>
 
     <div class="login-required-box" id="login-required-box">
       <h3>Login Required</h3>
       <p>
-        Please login or sign up with Google to view diamond prices and place orders.
+        Log in with Google to view current packages and start secure checkout.
       </p>
 
       <button
@@ -181,149 +181,13 @@
       </button>
     </div>
 
-    <div class="game-selector" id="game-selector">
-      <button type="button" class="game-choice active" data-game="free-fire">FREE FIRE <small>Diamonds</small></button>
-      <button type="button" class="game-choice" data-game="call-of-duty">CALL OF DUTY <small>COD Points</small></button>
+    <div class="game-selector" id="game-selector" role="group" aria-label="Choose a top-up game">
+      <button type="button" class="game-choice active" data-game="free-fire" aria-pressed="true">FREE FIRE <small>Diamonds</small></button>
+      <button type="button" class="game-choice" data-game="call-of-duty" aria-pressed="false">CALL OF DUTY <small>COD Points</small></button>
     </div>
     <p class="topup-game-note" id="topup-game-note">Free Fire · Diamonds · Enter your Free Fire Player UID</p>
-    <div class="diamond-grid hidden" id="diamond-grid">
-
-      <div class="diamond-card">
-        <div class="badge">STARTER</div>
-
-        <img
-          src="https://cdn-icons-png.flaticon.com/512/2583/2583344.png"
-          alt="Diamond Icon"
-        >
-
-        <h3>100 Diamonds</h3>
-
-        <p class="price" data-diamond-price>₦1,600</p>
-
-        <button
-          type="button"
-          data-diamonds="100"
-          data-item="100 Diamonds"
-          onclick="openDiamondPackageOrder(this)"
-        >
-          BUY NOW
-        </button>
-      </div>
-
-      <div class="diamond-card">
-        <img
-          src="https://cdn-icons-png.flaticon.com/512/2583/2583344.png"
-          alt="Diamond Icon"
-        >
-
-        <h3>210 Diamonds</h3>
-
-        <p class="price" data-diamond-price>₦3,200</p>
-
-        <button
-          type="button"
-          data-diamonds="210"
-          data-item="210 Diamonds"
-          onclick="openDiamondPackageOrder(this)"
-        >
-          BUY NOW
-        </button>
-      </div>
-
-      <div class="diamond-card featured-card">
-        <div class="badge">MOST POPULAR</div>
-
-        <img
-          src="https://cdn-icons-png.flaticon.com/512/2583/2583344.png"
-          alt="Diamond Icon"
-        >
-
-        <h3>530 Diamonds</h3>
-
-        <p class="price" data-diamond-price>₦7,900</p>
-
-        <button
-          type="button"
-          data-diamonds="530"
-          data-item="530 Diamonds"
-          onclick="openDiamondPackageOrder(this)"
-        >
-          BUY NOW
-        </button>
-      </div>
-
-      <div class="diamond-card">
-        <img
-          src="https://cdn-icons-png.flaticon.com/512/2583/2583344.png"
-          alt="Diamond Icon"
-        >
-
-        <h3>1080 Diamonds</h3>
-
-        <p class="price" data-diamond-price>₦15,900</p>
-
-        <button
-          type="button"
-          data-diamonds="1080"
-          data-item="1080 Diamonds"
-          onclick="openDiamondPackageOrder(this)"
-        >
-          BUY NOW
-        </button>
-      </div>
-
-      <div class="diamond-card">
-        <div class="badge purple">PREMIUM</div>
-
-        <img
-          src="https://cdn-icons-png.flaticon.com/512/2583/2583344.png"
-          alt="Diamond Icon"
-        >
-
-        <h3>2200 Diamonds</h3>
-
-        <p class="price" data-diamond-price>₦31,500</p>
-
-        <button
-          type="button"
-          data-diamonds="2200"
-          data-item="2200 Diamonds"
-          onclick="openDiamondPackageOrder(this)"
-        >
-          BUY NOW
-        </button>
-      </div>
-
-      <div class="diamond-card cod-product hidden" data-product-game="call-of-duty"><div class="badge purple">CODM</div><h3>80 COD Points</h3><p class="price">₦1,800</p><button type="button" data-game="call-of-duty" data-price="1800" data-item="80 COD Points" onclick="openTopupPackageOrder(this)">BUY NOW</button></div>
-      <div class="diamond-card cod-product hidden" data-product-game="call-of-duty"><div class="badge purple">CODM</div><h3>420 COD Points</h3><p class="price">₦8,000</p><button type="button" data-game="call-of-duty" data-price="8000" data-item="420 COD Points" onclick="openTopupPackageOrder(this)">BUY NOW</button></div>
-      <div class="diamond-card cod-product hidden" data-product-game="call-of-duty"><div class="badge purple">CODM</div><h3>880 COD Points</h3><p class="price">₦15,500</p><button type="button" data-game="call-of-duty" data-price="15500" data-item="880 COD Points" onclick="openTopupPackageOrder(this)">BUY NOW</button></div>
-
-      <div class="custom-diamond-box">
-
-        <h3>Custom Diamond Request</h3>
-
-        <p>
-          Enter the exact whole number of diamonds you want. Decimals are not allowed.
-        </p>
-
-        <input
-          type="number"
-          id="custom-diamond-amount"
-          placeholder="Enter diamond amount"
-          min="1"
-          step="1"
-        >
-
-        <button
-          type="button"
-          class="primary-btn"
-          onclick="submitCustomDiamond()"
-        >
-          REQUEST CUSTOM TOPUP ⚡
-        </button>
-
-      </div>
-
+    <div class="diamond-grid hidden" id="diamond-grid" aria-live="polite">
+      <p class="catalog-message">Current packages load securely after sign-in.</p>
     </div>
 
   </section>
@@ -351,6 +215,7 @@
         type="button"
         class="close-btn"
         onclick="closeModal()"
+        aria-label="Close checkout"
       >
         ✕
       </button>
@@ -368,65 +233,30 @@
         id="order-summary"
       ></div>
 
-      <input
-        type="text"
-        id="uid"
-        placeholder="Enter Free Fire Player UID"
-      >
+      <div id="game-fields-container" class="game-fields-container" aria-live="polite"></div>
+      <p id="game-fields-help" class="form-help">Enter only the in-game player details required for this package. Never enter a Google, Facebook, Apple, or game-account password.</p>
 
+      <label for="email">GOOGLE ACCOUNT EMAIL</label>
       <input
         type="email"
         id="email"
+        readonly
         placeholder="Enter Email Address"
       >
 
       <div class="payment-box">
-
-        <h3>Payment Details</h3>
-
-        <p>
-          <strong>Bank:</strong>
-          PALMPAY
-        </p>
-
-        <p>
-          <strong>Account:</strong>
-          <span id="account-number">7071048081</span>
-        </p>
-
-        <p>
-          <strong>Name:</strong>
-          CHUKWUMA CHIDOZIE FRANCIS
-        </p>
-
-        <button
-          type="button"
-          class="copy-btn"
-          onclick="copyAccountNumber()"
-        >
-          COPY ACCOUNT NUMBER
-        </button>
-
-        <div class="payment-warning">
-          ⚠ IMPORTANT DISCLAIMER
-
-          <br><br>
-
-          Use your exact Player UID / Player ID as the payment narration/description when making transfer.
-
-          <br><br>
-
-          Payments without matching UID narration may be ignored or delayed.
-        </div>
-
+        <h3>Secure Paystack checkout</h3>
+        <p>Your payment amount and order are checked by Savage Store's server before Paystack opens.</p>
+        <p>The order is not marked paid from this page. Payment is verified by the Paystack webhook.</p>
       </div>
 
       <button
         type="button"
         class="primary-btn full-btn"
+        id="complete-order-btn"
         onclick="completeOrder()"
       >
-        I HAVE PAID ⚡
+        PAY SECURELY WITH PAYSTACK
       </button>
 
     </div>
@@ -435,7 +265,7 @@
 
   <div class="toast hidden" id="toast"></div>
 
-  <script type="module" src="./script.js?v=60"></script>
+  <script type="module" src="./script.js?v=62"></script>
 
 </body>
 </html>

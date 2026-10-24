@@ -15,8 +15,9 @@
     href="https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Poppins:wght@300;400;500;600;700&display=swap"
     rel="stylesheet"
   >
+  <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:opsz,wght,FILL,GRAD@20..48,400,0,0" rel="stylesheet">
 
-  <link rel="stylesheet" href="style.css?v=60">
+  <link rel="stylesheet" href="style.css?v=62">
 
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 </head>
@@ -118,18 +119,19 @@
         type="text"
         id="search-orders"
         placeholder="Search Order ID / Email / UID / Account"
+        aria-label="Search orders"
       >
 
-      <select id="status-filter">
+      <select id="status-filter" aria-label="Filter orders by status">
         <option value="all">All Orders</option>
         <option value="processing">Processing</option>
         <option value="delivered">Delivered</option>
         <option value="failed">Failed</option>
       </select>
 
-      <select id="admin-game-filter"><option value="all">All Games</option><option value="free-fire">Free Fire</option><option value="call-of-duty">Call of Duty</option></select>
+      <select id="admin-game-filter" aria-label="Filter orders by game"><option value="all">All Games</option><option value="free-fire">Free Fire</option><option value="call-of-duty">Call of Duty</option></select>
 
-      <select id="order-type-filter">
+      <select id="order-type-filter" aria-label="Filter orders by type">
         <option value="all">All Types</option>
         <option value="topup">Top-up Orders</option>
         <option value="account-purchase">Account Purchases</option>
@@ -150,6 +152,27 @@
       <p>Loading listings...</p>
     </div>
 
+    <section class="admin-subsection hidden" id="admin-swaps-section">
+      <div class="section-title"><span>ACCOUNT SAFETY</span><h2>SWAP REQUEST REVIEW</h2></div>
+      <p class="admin-help">Both currently supported publishers prohibit account trading. No swap request can be approved until policy and verification checks support it.</p>
+      <div id="admin-swaps-list" class="orders-list"><p>Loading swap requests...</p></div>
+    </section>
+
+    <section class="admin-subsection hidden" id="admin-sales-section">
+      <div class="section-title"><span>MARKETPLACE SETTLEMENT</span><h2>ACCOUNT SALES</h2></div>
+      <p class="admin-help">Record the confirmed final sale price. The backend calculates the mandatory 5% fee on completed transfers. Record a payout as paid only after it has actually been sent.</p>
+      <div class="sale-record-form">
+        <label for="sale-listing-id">Listing ID</label><input id="sale-listing-id" type="text" autocomplete="off" placeholder="Approved listing ID">
+        <label for="sale-buyer-id">Buyer Firebase UID</label><input id="sale-buyer-id" type="text" autocomplete="off" placeholder="Authenticated buyer UID">
+        <label for="sale-final-price">Final sale price (₦)</label><input id="sale-final-price" type="number" min="1" step="1" inputmode="numeric">
+        <label for="sale-payment-status">Payment status</label><select id="sale-payment-status"><option value="pending">Pending</option><option value="confirmed">Confirmed by Technical Support</option><option value="failed">Failed</option></select>
+        <label for="sale-transfer-status">Transfer status</label><select id="sale-transfer-status"><option value="pending">Pending</option><option value="in-progress">In progress</option><option value="completed">Completed</option><option value="failed">Failed</option></select>
+        <label for="sale-payout-status">Seller payout</label><select id="sale-payout-status"><option value="pending">Pending</option><option value="paid">Paid and confirmed</option></select>
+        <button type="button" class="primary-btn full-btn" onclick="recordAccountSale()">SAVE ACCOUNT SALE</button>
+      </div>
+      <div id="admin-sales-list" class="orders-list"><p>Loading account sales...</p></div>
+    </section>
+
   </section>
 
   <section class="admin-section hidden" id="admin-settings-section">
@@ -160,15 +183,6 @@
     </div>
 
     <div class="settings-form">
-      <label for="setting-diamond-rate">Diamond rate (₦ per diamond)</label>
-      <input
-        type="number"
-        id="setting-diamond-rate"
-        min="1"
-        step="1"
-        placeholder="15"
-      >
-
       <label for="setting-support-whatsapp">Support WhatsApp number</label>
       <input
         type="text"
@@ -178,7 +192,7 @@
 
       <label class="settings-toggle">
         <input type="checkbox" id="setting-topup-enabled">
-        <span>Diamond Top-up Enabled</span>
+        <span>Game Top-up Enabled</span>
       </label>
 
       <label class="settings-toggle">
@@ -214,7 +228,7 @@
     <div class="login-required-box">
       <h3>You are not allowed to view this page.</h3>
       <p>
-        Please login with the official admin Gmail to access the dashboard.
+        Please sign in with an account authorized for Savage Store administration.
       </p>
 
       <button
@@ -245,7 +259,7 @@
 
   <div class="toast hidden" id="toast"></div>
 
-  <script type="module" src="./script.js?v=60"></script>
+  <script type="module" src="./script.js?v=62"></script>
 
 </body>
 </html>

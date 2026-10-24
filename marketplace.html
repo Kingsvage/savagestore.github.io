@@ -16,7 +16,7 @@
     rel="stylesheet"
   >
 
-  <link rel="stylesheet" href="style.css?v=60">
+  <link rel="stylesheet" href="style.css?v=62">
 
   <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
 </head>
@@ -73,11 +73,11 @@
           GAMING ACCOUNT
           <span>MARKETPLACE</span>
           <br>
-          THROUGH ADMIN
+          SUPPORT ASSISTED
         </h1>
 
         <p>
-          Find your next account from approved Free Fire and Call of Duty listings. Create a tracked purchase order in a secure, admin-managed flow.
+          Find available listings approved for display. Account transactions are coordinated through Savage Store Technical Support.
         </p>
 
         <div class="hero-buttons">
@@ -113,7 +113,7 @@
     <div class="login-required-box" id="marketplace-login-box">
       <h3>Login Required</h3>
       <p>
-        Please login or sign up to view account listings.
+        Sign in to buy an account through Technical Support. Approved public listings remain visible below.
       </p>
 
       <button
@@ -131,18 +131,19 @@
         <input
           type="text"
           id="marketplace-search"
-          placeholder="🔍 Search by title, rank, or region..."
+          placeholder="Search by title, rank, or region..."
+          aria-label="Search account listings"
         >
       </div>
 
       <div class="filter-controls">
-        <select id="game-filter">
+        <select id="game-filter" aria-label="Filter listings by game">
           <option value="">All Games</option>
           <option value="free-fire">Free Fire</option>
           <option value="call-of-duty">Call of Duty</option>
         </select>
 
-        <select id="region-filter">
+        <select id="region-filter" aria-label="Filter listings by region">
           <option value="">All Regions</option>
           <option value="Nigeria">Nigeria</option>
           <option value="Ghana">Ghana</option>
@@ -152,7 +153,7 @@
           <option value="Global">Global</option>
         </select>
 
-        <select id="price-filter">
+        <select id="price-filter" aria-label="Filter listings by price">
           <option value="">All Prices</option>
           <option value="0-50000">₦0 - ₦50,000</option>
           <option value="50000-100000">₦50,000 - ₦100,000</option>
@@ -161,7 +162,7 @@
           <option value="500000">₦500,000+</option>
         </select>
 
-        <select id="rank-filter">
+        <select id="rank-filter" aria-label="Filter listings by rank">
           <option value="">All Ranks</option>
           <option value="Bronze">Bronze</option>
           <option value="Silver">Silver</option>
@@ -172,7 +173,7 @@
           <option value="Grandmaster">Grandmaster</option>
         </select>
 
-        <select id="sort-filter">
+        <select id="sort-filter" aria-label="Sort account listings">
           <option value="newest">Newest listings</option>
           <option value="price-asc">Price: Low → High</option>
           <option value="price-desc">Price: High → Low</option>
@@ -216,27 +217,33 @@
 
   </footer>
 
-  <div class="modal hidden" id="account-detail-modal">
+  <div class="modal hidden" id="account-detail-modal" role="dialog" aria-modal="true" aria-label="Account details">
     <div class="modal-box account-modal-box">
-      <button type="button" class="close-btn" onclick="closeAccountDetails()">✕</button>
+      <button type="button" class="close-btn" aria-label="Close account details" onclick="closeAccountDetails()">✕</button>
       <div id="account-detail-content"></div>
     </div>
   </div>
 
-  <div class="modal hidden" id="account-purchase-modal">
+  <div class="modal hidden" id="account-purchase-modal" role="dialog" aria-modal="true" aria-label="Contact Technical Support about an account">
     <div class="modal-box account-modal-box">
-      <button type="button" class="close-btn" onclick="closeAccountPurchase()">✕</button>
-      <h2>Confirm Account Purchase</h2>
+      <button type="button" class="close-btn" aria-label="Close account purchase information" onclick="closeAccountPurchase()">✕</button>
+      <h2>Contact Technical Support</h2>
       <div class="summary-box" id="account-purchase-summary"></div>
-      <button type="button" class="primary-btn full-btn" onclick="confirmAccountPurchase()">
-        CONFIRM PURCHASE ⚡
+      <p class="purchase-disclaimer-copy">Savage Store Technical Support assists with the transaction. Do not pay an unverified seller directly. Seller login credentials are not displayed here. Payment and transfer status are managed through Technical Support. After receiving access, change the password, secure the account, review linked accounts, recovery methods and active sessions. The relevant publisher may prohibit account trading.</p>
+      <div class="account-card-actions">
+      <button type="button" class="secondary-btn full-btn" onclick="closeAccountPurchase()">
+        CANCEL
       </button>
+      <a class="primary-btn full-btn" id="account-purchase-confirm-button" target="_blank" rel="noopener noreferrer" onclick="closeAccountPurchase()">
+        CONTACT TECHNICAL SUPPORT
+      </a>
+      </div>
     </div>
   </div>
 
   <div class="toast hidden" id="toast"></div>
 
-  <script type="module" src="./script.js?v=60"></script>
+  <script type="module" src="./script.js?v=62"></script>
 
 </body>
 </html>

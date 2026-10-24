@@ -2,35 +2,27 @@ rules_version = '2';
 
 service cloud.firestore {
   match /databases/{database}/documents {
-    function signedIn() { return request.auth != null; }
-    function isOwner(userId) { return signedIn() && request.auth.uid == userId; }
-    function isAdmin() { return signedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid)); }
+    function signedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return signedIn() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return signedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+    }
+
     function onlyProfileFields() {
       return request.resource.data.diff(resource.data).affectedKeys().hasOnly([
         'uid', 'name', 'email', 'photo', 'phone', 'freeFireUid', 'codMobileUid',
-        'country', 'preferredGame', 'updatedAt'
+        'country', 'preferredGame', 'createdAt', 'updatedAt'
       ]);
     }
 
-    match /admins/{adminId} { allow read: if isOwner(adminId) || isAdmin(); allow write: if false; }
-    match /settings/{settingId} {
-      allow read: if settingId == 'config';
-      allow write: if settingId == 'config' && isAdmin();
-    }
-
-    // Create an /admins/{uid} document manually in the Firebase console for each admin.
-    // Example: /admins/YOUR_ADMIN_FIREBASE_UID with any field, such as email.
-    function isAdmin() {
-      return signedIn() &&
-        exists(/databases/$(database)/documents/admins/$(request.auth.uid));
-    }
-
-    function validMoney(value) {
-      return value is number && value > 0;
-    }
-
-    function validGameId() {
-      return !('gameId' in request.resource.data) || request.resource.data.gameId in ['free-fire', 'call-of-duty'];
+    function validGameId(data) {
+      return !('gameId' in data) || data.gameId in ['free-fire', 'call-of-duty'];
     }
 
     function validOrderStatus(status) {
@@ -38,48 +30,30 @@ service cloud.firestore {
     }
 
     function validListingStatus(status) {
-      return status in ['pending-review', 'approved', 'rejected', 'sold', 'removed'];
+      return status in ['pending-review', 'approved', 'rejected', 'sold', 'removed', 'under-sale', 'suspended'];
     }
 
-    function listingPath(listingId) {
-      return /databases/$(database)/documents/listings/$(listingId);
-    }
-
-    function orderPath(orderId) {
-      return /databases/$(database)/documents/orders/$(orderId);
-    }
-
-    function isValidTopupOrder() {
-      return request.resource.data.orderType == 'topup' &&
-        request.resource.data.userId == request.auth.uid &&
-        request.resource.data.status == 'processing' &&
-        validMoney(request.resource.data.price) &&
-        validGameId() &&
-        request.resource.data.gameUID is string &&
-        !('listingId' in request.resource.data);
-    }
-
-    function isValidAccountPurchaseOrder() {
-      return request.resource.data.orderType == 'account-purchase' &&
-        request.resource.data.userId == request.auth.uid &&
-        request.resource.data.status == 'processing' &&
-        request.resource.data.listingId is string &&
+    function isValidTopupOrder(orderId) {
+      return request.resource.data.keys().hasOnly([
+          'orderId', 'orderType', 'gameId', 'userId', 'customerName', 'customerEmail',
+          'googleEmail', 'gameUID', 'supplierOfferId', 'item', 'price',
+          'paymentStatus', 'fulfillmentStatus', 'status', 'createdAt'
+        ]) &&
+        request.resource.data.orderType == 'topup' &&
         request.resource.data.orderId == orderId &&
-        validGameId() &&
-        exists(listingPath(request.resource.data.listingId)) &&
-        get(listingPath(request.resource.data.listingId)).data.status == 'approved' &&
-        request.resource.data.price == get(listingPath(request.resource.data.listingId)).data.price &&
-        request.resource.data.item == get(listingPath(request.resource.data.listingId)).data.title &&
-        getAfter(listingPath(request.resource.data.listingId)).data.status == 'sold' &&
-        getAfter(listingPath(request.resource.data.listingId)).data.soldTo == request.auth.uid &&
-        getAfter(listingPath(request.resource.data.listingId)).data.soldOrderId == orderId;
-    }
-
-    function adminListingUpdate() {
-      return isAdmin() &&
-        validListingStatus(request.resource.data.status) &&
-        request.resource.data.sellerId == resource.data.sellerId &&
-        request.resource.data.price is number;
+        request.resource.data.userId == request.auth.uid &&
+        request.resource.data.status == 'processing' &&
+        request.resource.data.paymentStatus == 'pending' &&
+        request.resource.data.fulfillmentStatus == 'pending' &&
+        request.resource.data.supplierOfferId is string &&
+        request.resource.data.gameUID is string &&
+        request.resource.data.customerEmail is string &&
+        request.resource.data.googleEmail is string &&
+        request.resource.data.item is string &&
+        request.resource.data.price is number &&
+        request.resource.data.price > 0 &&
+        validGameId(request.resource.data) &&
+        !('listingId' in request.resource.data);
     }
 
     function sellerCancelPendingListing() {
@@ -92,21 +66,15 @@ service cloud.firestore {
         ]);
     }
 
-    function buyerMarksListingSoldWithOrder() {
-      return signedIn() &&
-        resource.data.status == 'approved' &&
-        request.resource.data.status == 'sold' &&
-        request.resource.data.soldTo == request.auth.uid &&
-        request.resource.data.soldOrderId is string &&
+    function adminListingUpdate() {
+      return isAdmin() &&
+        validListingStatus(request.resource.data.status) &&
+        request.resource.data.sellerId == resource.data.sellerId &&
         request.resource.data.diff(resource.data).affectedKeys().hasOnly([
-          'status', 'soldAt', 'soldTo', 'soldOrderId', 'updatedAt'
-        ]) &&
-        existsAfter(orderPath(request.resource.data.soldOrderId)) &&
-        getAfter(orderPath(request.resource.data.soldOrderId)).data.orderType == 'account-purchase' &&
-        getAfter(orderPath(request.resource.data.soldOrderId)).data.userId == request.auth.uid &&
-        getAfter(orderPath(request.resource.data.soldOrderId)).data.listingId == listingId &&
-        getAfter(orderPath(request.resource.data.soldOrderId)).data.price == resource.data.price &&
-        getAfter(orderPath(request.resource.data.soldOrderId)).data.status == 'processing';
+          'status', 'approvedAt', 'approvedBy', 'rejectedAt', 'rejectedBy',
+          'removedAt', 'removedBy', 'reviewedAt', 'reviewedBy', 'adminReason',
+          'updatedAt', 'soldAt', 'soldTo', 'saleId'
+        ]);
     }
 
     match /admins/{adminId} {
@@ -115,62 +83,103 @@ service cloud.firestore {
     }
 
     match /settings/{settingId} {
-      allow read: if settingId == "config";
-      allow write: if settingId == "config" &&
-        isAdmin() &&
-        request.resource.data.diamondRate is number &&
-        request.resource.data.diamondRate > 0 &&
+      allow read: if settingId == 'public';
+      allow create, update: if settingId == 'public' && isAdmin() &&
+        request.resource.data.keys().hasOnly([
+          'topupEnabled', 'marketplaceEnabled', 'maintenanceMode', 'supportWhatsapp',
+          'branding', 'updatedAt', 'updatedBy'
+        ]) &&
         request.resource.data.topupEnabled is bool &&
         request.resource.data.marketplaceEnabled is bool &&
         request.resource.data.maintenanceMode is bool &&
         request.resource.data.supportWhatsapp is string;
+      allow delete: if false;
+    }
+
+    // Finance settings are accessible to Cloud Functions only.
+    match /privateSettings/{settingId} {
+      allow read, write: if false;
     }
 
     match /users/{userId} {
-      allow create: if isOwner(userId) && request.resource.data.uid == request.auth.uid;
+      allow create: if isOwner(userId) &&
+        request.resource.data.uid == request.auth.uid &&
+        request.resource.data.get('email', '') == request.auth.token.email &&
+        request.resource.data.get('name', '') == request.auth.token.name &&
+        request.resource.data.get('photo', '') == request.auth.token.picture &&
+        request.resource.data.keys().hasOnly([
+          'uid', 'name', 'email', 'photo', 'phone', 'freeFireUid', 'codMobileUid',
+          'country', 'preferredGame', 'createdAt', 'updatedAt'
+        ]);
       allow read: if isOwner(userId) || isAdmin();
-      allow update: if isOwner(userId) && request.resource.data.uid == request.auth.uid && onlyProfileFields();
+      allow update: if isOwner(userId) &&
+        request.resource.data.uid == request.auth.uid &&
+        request.resource.data.get('email', '') == request.auth.token.email &&
+        request.resource.data.get('name', '') == request.auth.token.name &&
+        request.resource.data.get('photo', '') == request.auth.token.picture &&
+        onlyProfileFields();
       allow delete: if false;
     }
+
     match /orders/{orderId} {
-      allow create: if signedIn() &&
-        request.resource.data.orderId == orderId &&
-        (isValidTopupOrder() || isValidAccountPurchaseOrder());
-
-      allow read: if isAdmin() ||
-        (signedIn() && resource.data.userId == request.auth.uid);
-
+      allow create: if signedIn() && isValidTopupOrder(orderId);
+      allow read: if isAdmin() || (signedIn() && resource.data.userId == request.auth.uid);
       allow update: if isAdmin() &&
         validOrderStatus(request.resource.data.status) &&
-        request.resource.data.price == resource.data.price &&
         request.resource.data.userId == resource.data.userId &&
-        request.resource.data.orderType == resource.data.orderType;
-
-      allow delete: if isAdmin();
+        request.resource.data.get('orderType', 'legacy') == resource.data.get('orderType', 'legacy') &&
+        request.resource.data.get('price', 0) == resource.data.get('price', 0) &&
+        request.resource.data.get('paymentStatus', 'pending') == resource.data.get('paymentStatus', 'pending') &&
+        request.resource.data.diff(resource.data).affectedKeys().hasOnly([
+          'status', 'adminNotes', 'updatedAt', 'deliveredAt', 'failedAt',
+          'statusUpdatedBy', 'deliveryReceiptSent', 'deliveryReceiptSentAt'
+        ]) &&
+        (request.resource.data.status != 'delivered' ||
+          resource.data.get('orderType', 'legacy') != 'topup' || resource.data.get('paymentStatus', 'pending') == 'paid');
+      allow delete: if false;
     }
-    match /listings/{listingId} {
-      allow create: if signedIn() &&
-        request.resource.data.sellerId == request.auth.uid &&
-        request.resource.data.status == 'pending-review' &&
-        request.resource.data.title is string &&
-        request.resource.data.region is string &&
-        request.resource.data.rank is string &&
-        request.resource.data.level is string &&
-        request.resource.data.description is string &&
-        request.resource.data.contact is string &&
-        validMoney(request.resource.data.price) &&
-        validGameId();
 
+    match /listings/{listingId} {
+      allow create: if false; // New listings are validated and written by submitAccountListing.
       allow read: if isAdmin() ||
         (signedIn() && resource.data.sellerId == request.auth.uid) ||
         resource.data.status == 'approved';
-
-      allow update: if adminListingUpdate() ||
-        sellerCancelPendingListing() ||
-        buyerMarksListingSoldWithOrder();
-
-      allow delete: if isAdmin();
+      allow update: if adminListingUpdate() || sellerCancelPendingListing();
+      allow delete: if false;
     }
-    match /{document=**} { allow read, write: if false; }
+
+    match /listingSecrets/{listingId} {
+      allow read: if signedIn() && resource.data.sellerId == request.auth.uid;
+      allow create, update, delete: if false;
+    }
+
+    match /accountSwaps/{swapId} {
+      allow read: if isAdmin() ||
+        (signedIn() && resource.data.ownerId == request.auth.uid);
+      allow create, update, delete: if false; // Callable functions enforce game policy and review authorization.
+    }
+
+    match /accountSwapSecrets/{swapId} {
+      allow read: if isAdmin();
+      allow create, update, delete: if false; // Admin SDK only.
+    }
+
+    match /accountSales/{saleId} {
+      allow read: if isAdmin() ||
+        (signedIn() && (resource.data.sellerId == request.auth.uid || resource.data.buyerId == request.auth.uid));
+      allow create, update, delete: if false; // Fee and payout values are backend-authoritative.
+    }
+
+    match /profileLookupTokens/{tokenId} {
+      allow read, write: if false;
+    }
+
+    match /profileLookupRateLimits/{uid} {
+      allow read, write: if false;
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
   }
 }

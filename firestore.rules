@@ -6,12 +6,18 @@ service cloud.firestore {
       return request.auth != null;
     }
 
+    function isAdminEmail() {
+      return signedIn() &&
+        request.auth.token.email == 'chukwumachidozie18@gmail.com' &&
+        request.auth.token.email_verified == true;
+    }
+
     function isOwner(userId) {
       return signedIn() && request.auth.uid == userId;
     }
 
     function isAdmin() {
-      return signedIn() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
+      return isAdminEmail() && exists(/databases/$(database)/documents/admins/$(request.auth.uid));
     }
 
     function onlyProfileFields() {
@@ -78,7 +84,7 @@ service cloud.firestore {
     }
 
     match /admins/{adminId} {
-      allow read: if isOwner(adminId) || isAdmin();
+      allow read: if isAdmin() && (isOwner(adminId) || request.auth.uid == adminId);
       allow write: if false;
     }
 

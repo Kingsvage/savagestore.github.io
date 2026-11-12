@@ -25,3 +25,12 @@ export const emailConfig = {
 export const adminConfig = {
   emails: ["chukwumachidozie18@gmail.com"]
 };
+
+// Load navigation overrides on every page that imports this shared config.
+if (typeof document !== "undefined" && !document.getElementById("nav-fixes-styles")) {
+  const navigationStyles = document.createElement("link");
+  navigationStyles.id = "nav-fixes-styles";
+  navigationStyles.rel = "stylesheet";
+  navigationStyles.href = new URL("./nav-fixes.css", import.meta.url).href;
+  document.head.appendChild(navigationStyles);
+}

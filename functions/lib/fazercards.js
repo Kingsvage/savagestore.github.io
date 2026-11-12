@@ -72,9 +72,20 @@ function buildFazerCardsTopupRequest({ categoryId, offerId, fields, idempotencyK
   };
 }
 
+function toBuffer(rawBody) {
+  if (Buffer.isBuffer(rawBody)) return rawBody;
+  if (rawBody == null) return null;
+  if (rawBody instanceof Uint8Array) return Buffer.from(rawBody);
+  if (ArrayBuffer.isView(rawBody)) return Buffer.from(rawBody.buffer, rawBody.byteOffset, rawBody.byteLength);
+  if (rawBody instanceof ArrayBuffer) return Buffer.from(rawBody);
+  if (typeof rawBody === "string") return Buffer.from(rawBody, "utf8");
+  return null;
+}
+
 function verifyFazerCardsWebhookSignature(rawBody, signature, secret) {
-  if (!Buffer.isBuffer(rawBody) || typeof signature !== "string" || !secret) return false;
-  const expected = `sha256=${crypto.createHmac("sha256", secret).update(rawBody).digest("hex")}`;
+  const payload = toBuffer(rawBody);
+  if (!payload || typeof signature !== "string" || !secret) return false;
+  const expected = `sha256=${crypto.createHmac("sha256", secret).update(payload).digest("hex")}`;
   const actualBytes = Buffer.from(signature, "utf8");
   const expectedBytes = Buffer.from(expected, "utf8");
   return actualBytes.length === expectedBytes.length && crypto.timingSafeEqual(actualBytes, expectedBytes);

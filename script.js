@@ -1295,7 +1295,7 @@ window.openAccountPurchase = async (listingId) => {
   const disclaimerHeading = document.createElement("strong");
   disclaimerHeading.textContent = "Before you continue";
   const disclaimerText = document.createElement("p");
-  disclaimerText.textContent = "Savage Store Technical Support assists with the transaction. Do not pay an unverified seller directly. Seller login credentials are not shown here; payment and transfer status are handled through Technical Support. After receiving access, change the password, secure the account, review linked accounts and recovery methods, and sign out active sessions. Game publishers may prohibit account trading.";
+  disclaimerText.textContent = "Savage Store Technical Support assists with this transaction to help verify payment and transfer. Do not pay a seller directly unless Technical Support has instructed and verified the payment. After receiving account access, immediately change the password, secure the recovery email or login method, enable available security features, review active sessions and linked devices, and never share your new password. Contact support if anything looks suspicious. Game publishers may prohibit account trading; Savage Store does not claim publisher authorization or endorsement.";
   disclaimer.append(disclaimerHeading, disclaimerText);
   if (!modal.querySelector(".purchase-disclaimer-copy")) summary.appendChild(disclaimer);
   const supportMessage = [
@@ -1304,6 +1304,9 @@ window.openAccountPurchase = async (listingId) => {
     `Game: ${getGame(getListingGameId(listing)).name}`,
     `Account: ${listing.title || "Gaming Account"}`,
     `Advertised price: ${formatNaira(listing.price)}`,
+    ...(user.displayName ? [`Buyer name: ${user.displayName}`] : []),
+    ...(user.email ? [`Buyer email: ${user.email}`] : []),
+    "",
     "Please confirm availability and assist with the account transaction."
   ].join("\n");
   const supportLink = document.getElementById("account-purchase-confirm-button");
@@ -2405,6 +2408,16 @@ window.addEventListener("scroll", () => {
   if (!header) return;
   header.classList.toggle("is-scrolled", window.scrollY > 40);
 });
+const sellerAgreementCheckbox = document.getElementById("seller-agreement-accepted");
+const sellerSubmitButton = document.getElementById("submit-account-listing");
+if (sellerAgreementCheckbox && sellerSubmitButton) {
+  const syncSellerAgreementButton = () => {
+    sellerSubmitButton.disabled = !sellerAgreementCheckbox.checked;
+  };
+  sellerAgreementCheckbox.addEventListener("change", syncSellerAgreementButton);
+  syncSellerAgreementButton();
+}
+
 window.submitAccountListing = async () => {
   await ensureSiteSettingsLoaded();
 

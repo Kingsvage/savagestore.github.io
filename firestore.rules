@@ -155,8 +155,9 @@ service cloud.firestore {
     }
 
     match /listingSecrets/{listingId} {
-      allow read: if signedIn() && resource.data.sellerId == request.auth.uid;
-      allow create, update, delete: if false;
+      // Private seller contact is returned only by the audited admin callable.
+      // Browser clients, including the listing owner, cannot query this collection.
+      allow read, create, update, delete: if false;
     }
 
     match /accountSwaps/{swapId} {

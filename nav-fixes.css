@@ -1,0 +1,117 @@
+/* Navigation usability improvements: keep navigation available while scrolling and make its controls touch-friendly. */
+header {
+  z-index: 10020;
+}
+
+header.is-scrolled {
+  position: fixed !important;
+  inset: 0 0 auto;
+  width: 100%;
+  padding-top: 12px;
+  padding-bottom: 12px;
+  background: rgba(6, 6, 6, 0.96);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 8px 24px rgba(0, 0, 0, 0.35);
+  backdrop-filter: blur(14px);
+}
+
+/* The matching spacer is inserted by script.js so fixing the header does not
+   make the page jump or cover the content where the header used to be. */
+.navigation-scroll-spacer {
+  display: block;
+  width: 100%;
+  pointer-events: none;
+}
+
+nav a,
+#nav-login-btn,
+#mobile-menu-toggle {
+  position: relative;
+  z-index: 1;
+  min-width: 44px;
+  min-height: 44px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  touch-action: manipulation;
+  pointer-events: auto;
+}
+
+nav a.nav-icon-only,
+#nav-login-btn.nav-icon-only {
+  padding: 10px;
+}
+
+#mobile-menu-toggle {
+  display: none;
+  color: #fff;
+  background: linear-gradient(90deg, var(--purple), var(--pink));
+  border: 0;
+  border-radius: 12px;
+}
+
+@media (max-width: 850px) {
+  header {
+    position: relative;
+    flex-direction: row;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 14px 5%;
+  }
+
+  header.is-scrolled {
+    position: fixed !important;
+  }
+
+  #mobile-menu-toggle {
+    display: inline-flex;
+    flex: 0 0 44px;
+  }
+
+  header nav {
+    display: none;
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    z-index: 10021;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 6px;
+    padding: 12px 5% 18px;
+    background: rgba(6, 6, 6, 0.98);
+    border-bottom: 1px solid rgba(255, 255, 255, 0.12);
+    box-shadow: 0 12px 24px rgba(0, 0, 0, 0.4);
+  }
+
+  header nav.active {
+    display: flex;
+  }
+
+  header nav a,
+  header nav #nav-login-btn {
+    width: 100%;
+    justify-content: flex-start;
+    padding: 10px 12px;
+    border-radius: 10px;
+  }
+
+  header nav a.nav-icon-only,
+  header nav #nav-login-btn.nav-icon-only {
+    justify-content: flex-start;
+  }
+
+  header nav a.active,
+  header nav a:hover,
+  header nav #nav-login-btn:hover {
+    background: rgba(122, 0, 255, 0.18);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  html,
+  * {
+    scroll-behavior: auto !important;
+  }
+}
